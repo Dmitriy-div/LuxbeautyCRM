@@ -22,10 +22,14 @@
 </head>
 <body class="text-gray-800 pb-20 select-none">
 
-    <div id="loader-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+    <div id="loader-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center transition-opacity duration-300">
         <div class="loader mb-4"></div>
-        <p class="text-gray-500 text-sm">Синхронизация...</p>
+        <p class="text-gray-500 text-sm">Синхронизация данных...</p>
     </div>
+
+    <button id="main-fab" onclick="openModal('modal-appointment')" class="fixed bottom-24 right-5 w-14 h-14 bg-purple-600 text-white rounded-full shadow-xl flex items-center justify-center text-2xl active:scale-90 transition-all z-40">
+        <i class="fas fa-plus"></i>
+    </button>
 
     <div id="page-home" class="page p-4 block">
         <div class="flex justify-between items-center mb-6">
@@ -64,7 +68,7 @@
                 <div class="w-10 h-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-lg"><i class="fas fa-plus"></i></div>
                 <span class="text-[10px] font-medium text-gray-500">Запись</span>
             </div>
-            <div onclick="switchTab('page-clients')" class="bg-white p-3 rounded-xl shadow-sm flex flex-col items-center justify-center gap-2 active:scale-95 transition-all">
+            <div onclick="switchTab('page-clients'); openModal('modal-client');" class="bg-white p-3 rounded-xl shadow-sm flex flex-col items-center justify-center gap-2 active:scale-95 transition-all">
                 <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center text-lg"><i class="fas fa-user-plus"></i></div>
                 <span class="text-[10px] font-medium text-gray-500">Клиент</span>
             </div>
@@ -93,7 +97,9 @@
             <input type="text" id="client-search" placeholder="Поиск по имени..." class="w-full outline-none text-sm bg-transparent">
         </div>
         <div class="space-y-2 pb-16" id="clients-list"></div>
-        <button onclick="openModal('modal-client')" class="fixed bottom-24 right-5 w-14 h-14 bg-gray-900 text-white rounded-full shadow-xl flex items-center justify-center text-2xl active:scale-90 transition-all z-40"><i class="fas fa-plus"></i></button>
+        <button onclick="openModal('modal-client')" class="fixed bottom-24 right-5 w-14 h-14 bg-gray-900 text-white rounded-full shadow-xl flex items-center justify-center text-2xl active:scale-90 transition-all z-40">
+            <i class="fas fa-plus"></i>
+        </button>
     </div>
 
     <div id="modal-appointment" class="fixed inset-0 z-50 hidden">
@@ -146,27 +152,46 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbw4sj8PQirC7XPb1QlgDSb4zWOFlqNLWjuN1cMbBt62m5jbiWTu4DmxibWhxMB6nPomHA/exec"; // ЗАМЕНИТЕ НА СВОЙ
+        const API_URL = "https://script.google.com/macros/s/AKfycbzMpmNmAT1JTpkX7Bjj257SP_Hn7Yh74OnK9rqVgewp0kVkxQQ3LGLcvW9iURWojGyd-A/exec"; 
         const tg = window.Telegram.WebApp;
         tg.expand();
 
         let store = { clients: [], appointments: [], services: [], selectedDate: new Date().toISOString().split('T')[0] };
         let editMode = { type: null, id: null };
 
-        // Инициализация
+        // ИНИЦИАЛИЗАЦИЯ
         document.addEventListener('DOMContentLoaded', async () => {
             setTodayDateHeader();
             renderCalendarStrip();
-            if(!API_URL.includes("ВАШ")) await loadData();
-            document.getElementById('loader-screen').classList.add('hidden');
+            
+            // Загрузка из кэша для мгновенного отображения
+            loadFromCache(); 
+            
+            if(!API_URL.includes("ВАШ")) {
+                await loadData();
+            }
+            document.getElementById('loader-screen').classList.add('opacity-0');
+            setTimeout(() => document.getElementById('loader-screen').classList.add('hidden'), 300);
         });
 
-        // Маска +375
+        // МАСКА ТЕЛЕФОНА +375
         document.getElementById('phone-mask').addEventListener('input', function (e) {
             let x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,2})(\d{0,3})(\d{0,2})(\d{0,2})/);
             if (!x[2]) { e.target.value = '+375'; return; }
             e.target.value = '+375 (' + x[2] + ') ' + x[3] + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
         });
+
+        // КЭШИРОВАНИЕ
+        function loadFromCache() {
+            const cached = localStorage.getItem('beauty_crm_cache');
+            if (cached) {
+                const data = JSON.parse(cached);
+                store.clients = data.clients || [];
+                store.appointments = data.appointments || [];
+                store.services = data.services || [];
+                refreshUI();
+            }
+        }
 
         async function loadData() {
             try {
@@ -176,9 +201,16 @@
                     store.clients = data.clients;
                     store.appointments = data.appointments;
                     store.services = data.services;
+                    
+                    localStorage.setItem('beauty_crm_cache', JSON.stringify({
+                        clients: data.clients,
+                        appointments: data.appointments,
+                        services: data.services
+                    }));
+                    
                     refreshUI();
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Ошибка сети, кэш активен", e); }
         }
 
         async function sendData(action, payload) {
@@ -232,15 +264,15 @@
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center animate-fadeIn">
                     <div class="flex gap-4" onclick="editAppt('${app.id}')">
                         <div class="flex flex-col items-center border-r pr-4">
-                            <span class="text-xl font-bold">${app.time.slice(0,5)}</span>
+                            <span class="text-xl font-bold text-gray-800">${app.time.slice(0,5)}</span>
                             <span class="text-[9px] font-bold text-purple-500 uppercase">${app.date.startsWith(nextStr) ? 'Завтра' : 'Сегодня'}</span>
                         </div>
                         <div>
-                            <div class="font-bold text-sm">${app.client_name}</div>
+                            <div class="font-bold text-sm text-gray-800">${app.client_name}</div>
                             <div class="text-xs text-gray-500">${app.service}</div>
                         </div>
                     </div>
-                    <a href="tel:+${dial}" class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center"><i class="fas fa-phone text-sm"></i></a>
+                    <a href="tel:+${dial}" class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center active:scale-90"><i class="fas fa-phone text-sm"></i></a>
                 </div>`;
             });
         }
@@ -251,10 +283,10 @@
             list.innerHTML = '';
             store.clients.filter(c => c.name.toLowerCase().includes(term)).forEach(c => {
                 list.innerHTML += `
-                <div class="bg-white p-4 rounded-xl shadow-sm flex items-center justify-between border border-gray-50">
+                <div class="bg-white p-4 rounded-xl shadow-sm flex items-center justify-between border border-gray-50 animate-fadeIn">
                     <div class="flex items-center gap-3" onclick="editClient('${c.id}')">
-                        <div class="w-10 h-10 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold">${c.name[0]}</div>
-                        <div><div class="font-bold text-sm">${c.name}</div><div class="text-xs text-gray-400">${c.phone}</div></div>
+                        <div class="w-10 h-10 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold text-sm">${c.name[0].toUpperCase()}</div>
+                        <div><div class="font-bold text-sm text-gray-800">${c.name}</div><div class="text-xs text-gray-400">${c.phone}</div></div>
                     </div>
                     <a href="tel:+${c.phone.replace(/\D/g,'')}" class="w-9 h-9 rounded-full bg-green-50 text-green-600 flex items-center justify-center"><i class="fas fa-phone text-sm"></i></a>
                 </div>`;
@@ -270,7 +302,7 @@
                 const d = new Date(); d.setDate(d.getDate() + i);
                 const s = d.toISOString().split('T')[0];
                 const active = s === store.selectedDate;
-                html += `<div onclick="selectDate('${s}')" class="flex flex-col items-center justify-center min-w-[55px] h-[75px] ${active ? 'bg-gray-900 text-white' : 'bg-white text-gray-500'} rounded-2xl transition-all">
+                html += `<div onclick="selectDate('${s}')" class="flex flex-col items-center justify-center min-w-[55px] h-[75px] ${active ? 'bg-gray-900 text-white shadow-lg scale-105' : 'bg-white text-gray-500'} rounded-2xl transition-all cursor-pointer">
                     <span class="text-[10px] font-bold">${days[d.getDay()]}</span><span class="text-xl font-bold">${d.getDate()}</span>
                 </div>`;
             }
@@ -286,21 +318,21 @@
             document.getElementById('no-appointments').classList.toggle('hidden', filtered.length > 0);
             filtered.forEach(app => {
                 container.innerHTML += `
-                <div class="flex gap-3" onclick="editAppt('${app.id}')">
+                <div class="flex gap-3 animate-fadeIn" onclick="editAppt('${app.id}')">
                     <div class="w-1.5 rounded-full ${app.status === 'completed' ? 'bg-green-400' : 'bg-purple-500'}"></div>
                     <div class="w-full bg-white p-4 rounded-xl shadow-sm border border-gray-50">
                         <div class="flex justify-between items-start">
-                            <div class="font-bold text-lg">${app.time.slice(0,5)}</div>
-                            <span class="bg-gray-100 text-xs px-2 py-1 rounded-md">${app.price} ₽</span>
+                            <div class="font-bold text-lg text-gray-800">${app.time.slice(0,5)}</div>
+                            <span class="bg-gray-100 text-xs px-2 py-1 rounded-md font-bold">${app.price} ₽</span>
                         </div>
-                        <div class="font-bold text-sm">${app.client_name}</div>
+                        <div class="font-bold text-sm text-gray-700">${app.client_name}</div>
                         <div class="text-xs text-gray-500">${app.service}</div>
                     </div>
                 </div>`;
             });
         }
 
-        // РЕДАКТИРОВАНИЕ
+        // РЕДАКТИРОВАНИЕ И МОДАЛКИ
         function editClient(id) {
             const c = store.clients.find(item => item.id == id);
             editMode = { type: 'client', id: id };
@@ -323,14 +355,13 @@
             openModal('modal-appointment');
         }
 
-        // САБМИТЫ
         document.getElementById('form-client').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btn-save-client'); btn.disabled = true;
             const data = Object.fromEntries(new FormData(e.target));
             const action = editMode.type === 'client' ? 'updateClient' : 'addClient';
             const res = await sendData(action, { id: editMode.id, ...data });
-            if(res.status === 'success') { await loadData(); closeModal('modal-client'); }
+            if(res.status === 'success') { await loadData(); closeModal('modal-client'); e.target.reset(); }
             btn.disabled = false;
         });
 
@@ -346,7 +377,7 @@
             };
             const action = editMode.type === 'appt' ? 'updateAppointment' : 'addAppointment';
             const res = await sendData(action, { id: editMode.id, ...data });
-            if(res.status === 'success') { await loadData(); closeModal('modal-appointment'); }
+            if(res.status === 'success') { await loadData(); closeModal('modal-appointment'); e.target.reset(); }
             btn.disabled = false;
         });
 
@@ -361,7 +392,6 @@
             if(res.status === 'success') { await loadData(); closeModal('modal-appointment'); }
         }
 
-        // ВСПОМОГАТЕЛЬНЫЕ
         function populateSelects() {
             const cSel = document.getElementById('appt-client');
             cSel.innerHTML = '<option value="" disabled selected>Клиент</option>';
@@ -377,6 +407,7 @@
             document.getElementById(id).classList.remove('hidden');
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.replace('nav-active', 'text-gray-400'));
             document.querySelector(`[data-target="${id}"]`).classList.replace('text-gray-400', 'nav-active');
+            document.getElementById('main-fab').classList.toggle('hidden', id === 'page-clients');
         }
 
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); if(id === 'modal-appointment') populateSelects(); }
