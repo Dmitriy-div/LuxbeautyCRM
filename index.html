@@ -14,7 +14,6 @@
         .page { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         .completed { opacity: 0.5; filter: grayscale(1); }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="pb-28">
@@ -122,7 +121,7 @@
                     <p id="det-ltv" class="text-xl font-bold">0 ₽</p>
                 </div>
             </div>
-            <button id="btn-viber" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold mb-6 active:scale-95 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2">
+            <button id="btn-viber-main" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold mb-6 active:scale-95 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2">
                 <i class="fab fa-viber"></i>
                 <span>Напомнить (копировать текст)</span>
             </button>
@@ -167,6 +166,34 @@
             return d.toISOString().split('T')[0];
         }
 
+        // Новая функция: Быстрая запись на конкретную дату
+        function fastAddAppt(dateStr) {
+            event.stopPropagation();
+            document.getElementById('appt-date').value = dateStr;
+            openModal('modal-appt');
+        }
+
+        function fastViber(clientId, apptId) {
+            event.stopPropagation();
+            const client = store.clients.find(c => c.id == clientId);
+            const appt = store.appointments.find(a => a.id == apptId);
+            if(!client || !appt) return;
+
+            const msg = `Привет, ${client.name}! Напоминаю о нашей записи: ${formatDate(appt.date)} в ${appt.time} (${appt.service}). Жду тебя!`;
+            
+            navigator.clipboard.writeText(msg).then(() => {
+                tg.HapticFeedback.notificationOccurred('success');
+                tg.showPopup({
+                    title: 'Текст скопирован',
+                    message: 'Вставьте текст в Viber после открытия чата.',
+                    buttons: [{type: 'default', text: 'Открыть Viber'}]
+                }, (id) => {
+                    const phone = client.phone.replace(/\D/g,'');
+                    window.open(`viber://chat?number=%2B${phone}`, '_blank');
+                });
+            });
+        }
+
         async function loadData() {
             try {
                 const res = await fetch(`${API_URL}?action=getData`);
@@ -202,18 +229,32 @@
                 const dayAppts = store.appointments.filter(a => getISODate(a.date) === ds).sort((a,b) => a.time.localeCompare(b.time));
                 cont.innerHTML += `
                     <div class="mb-4">
-                        <div class="flex items-center gap-3 mb-4">
-                            <div class="w-12 h-12 ${i==0?'bg-purple-600 text-white shadow-lg':'bg-white text-gray-400'} rounded-2xl flex flex-col items-center justify-center font-bold">
-                                <span class="text-[10px] uppercase">${d.toLocaleDateString('ru',{weekday:'short'})}</span>
-                                <span class="text-lg">${d.getDate()}</span>
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 ${i==0?'bg-purple-600 text-white shadow-lg':'bg-white text-gray-400'} rounded-2xl flex flex-col items-center justify-center font-bold">
+                                    <span class="text-[10px] uppercase">${d.toLocaleDateString('ru',{weekday:'short'})}</span>
+                                    <span class="text-lg">${d.getDate()}</span>
+                                </div>
+                                <div class="font-bold text-sm text-gray-800">${i==0?'Сегодня':d.toLocaleDateString('ru',{day:'numeric',month:'long'})}</div>
                             </div>
-                            <div class="font-bold text-sm text-gray-800">${i==0?'Сегодня':d.toLocaleDateString('ru',{day:'numeric',month:'long'})}</div>
+                            <button onclick="fastAddAppt('${ds}')" class="w-10 h-10 bg-white text-purple-600 rounded-full shadow-sm flex items-center justify-center active:scale-90 transition-all border border-purple-50">
+                                <i class="fas fa-plus text-xs"></i>
+                            </button>
                         </div>
                         <div class="ml-6 pl-6 border-l-2 border-dashed border-gray-100 space-y-3">
                             ${dayAppts.map(a => `
                                 <div onclick="openEditAppt('${a.id}')" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-50 flex justify-between items-center active:scale-95 transition-all ${a.status=='completed'?'completed':''}">
-                                    <div><p class="text-xs font-black text-purple-600">${a.time}</p><p class="font-bold text-sm">${a.client_name}</p><p class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">${a.service}</p></div>
-                                    <div class="text-xs font-bold text-gray-700 bg-gray-50 px-2 py-1 rounded-lg">${a.price} ₽</div>
+                                    <div>
+                                        <p class="text-xs font-black text-purple-600">${a.time}</p>
+                                        <p class="font-bold text-sm text-gray-800">${a.client_name}</p>
+                                        <p class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">${a.service}</p>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <div class="text-xs font-bold text-gray-700 bg-gray-50 px-2 py-1 rounded-lg">${a.price} ₽</div>
+                                        <button onclick="fastViber('${a.client_id}', '${a.id}')" class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                                            <i class="fab fa-viber"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             `).join('') || '<p class="text-[10px] text-gray-300 italic py-2">Записей нет</p>'}
                         </div>
@@ -230,9 +271,17 @@
                 homeCont.innerHTML = '<div class="text-center p-8 bg-white rounded-3xl border-2 border-dashed border-gray-100 text-gray-300 text-sm font-medium">На сегодня записей нет</div>';
             } else {
                 homeCont.innerHTML = appts.sort((a,b) => a.time.localeCompare(b.time)).slice(0,3).map(a => `
-                    <div onclick="openEditAppt('${a.id}')" class="bg-white p-4 rounded-2xl shadow-sm flex items-center gap-4 border border-gray-50 active:scale-95 transition-all">
-                        <div class="w-12 text-center font-black text-purple-600 border-r border-gray-100 pr-2">${a.time}</div>
-                        <div><p class="font-bold text-sm">${a.client_name}</p><p class="text-[10px] text-gray-400 font-bold uppercase">${a.service}</p></div>
+                    <div onclick="openEditAppt('${a.id}')" class="bg-white p-4 rounded-2xl shadow-sm flex items-center justify-between border border-gray-50 active:scale-95 transition-all">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 text-center font-black text-purple-600 border-r border-gray-100 pr-2">${a.time}</div>
+                            <div>
+                                <p class="font-bold text-sm text-gray-800">${a.client_name}</p>
+                                <p class="text-[10px] text-gray-400 font-bold uppercase">${a.service}</p>
+                            </div>
+                        </div>
+                        <button onclick="fastViber('${a.client_id}', '${a.id}')" class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                            <i class="fab fa-viber"></i>
+                        </button>
                     </div>
                 `).join('');
             }
@@ -262,17 +311,9 @@
             document.getElementById('det-ltv').innerText = history.reduce((s,a)=>s+Number(a.price),0).toLocaleString() + ' ₽';
             document.getElementById('det-history').innerHTML = history.map(a => `<div class="bg-gray-50 p-4 rounded-2xl flex justify-between items-center border border-gray-100"><div><p class="text-[10px] font-bold text-gray-400 uppercase">${formatDate(a.date)} ${a.time}</p><p class="text-sm font-bold text-gray-800">${a.service}</p></div><p class="font-bold text-sm text-purple-600">${a.price} ₽</p></div>`).join('') || '<p class="text-center text-gray-300 py-4">История пуста</p>';
             
-            // ЛОГИКА VIBER + БУФЕР
-            document.getElementById('btn-viber').onclick = () => {
+            document.getElementById('btn-viber-main').onclick = () => {
                 const next = history[0] || {date: '', time: '', service: ''};
-                const msg = `Привет, ${c.name}! Напоминаю о нашей записи: ${formatDate(next.date)} в ${next.time} (${next.service}). Жду тебя!`;
-                
-                navigator.clipboard.writeText(msg).then(() => {
-                    tg.HapticFeedback.notificationOccurred('success');
-                    tg.showAlert("Текст скопирован! Теперь вставьте его в чат Viber.");
-                    const phone = c.phone.replace(/\D/g,'');
-                    window.open(`viber://chat?number=%2B${phone}`, '_blank');
-                });
+                fastViber(c.id, next.id);
             };
             document.getElementById('modal-details').classList.remove('hidden');
         }
