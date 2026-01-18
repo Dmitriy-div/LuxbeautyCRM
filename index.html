@@ -122,8 +122,9 @@
                     <p id="det-ltv" class="text-xl font-bold">0 ₽</p>
                 </div>
             </div>
-            <button id="btn-wa" class="w-full bg-green-500 text-white py-4 rounded-2xl font-bold mb-6 active:scale-95 transition-all shadow-lg shadow-green-100">
-                <i class="fab fa-whatsapp mr-2"></i>Напомнить в WhatsApp
+            <button id="btn-viber" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold mb-6 active:scale-95 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2">
+                <i class="fab fa-viber"></i>
+                <span>Напомнить (копировать текст)</span>
             </button>
             <h4 class="text-[10px] font-bold uppercase text-gray-400 mb-4 tracking-widest">История визитов</h4>
             <div id="det-history" class="space-y-3 pb-6"></div>
@@ -146,22 +147,20 @@
     </nav>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbw5SKkHdTe3c3Noizy01ZFla9BtMhyjfQDOH-gUePdqqwJANrlFn1xOQVlIxX4riNuZrQ/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbyvy4qSSYI5jo7H4t0auDh7beL4uivwzfI8Gk8BfaKSsSvRJaV_aQ1Qkov0Mm-bGNL0aA/exec";
         const tg = window.Telegram.WebApp;
         let store = { clients: [], appointments: [], services: [] };
         let currentEditId = null;
 
         document.addEventListener('DOMContentLoaded', () => { loadData(); tg.expand(); });
 
-        // Умное форматирование даты
         function formatDate(rawDate) {
             if (!rawDate) return "";
             const d = new Date(rawDate);
-            if (isNaN(d.getTime())) return String(rawDate).split('T')[0]; // fallback
+            if (isNaN(d.getTime())) return String(rawDate).split('T')[0];
             return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
 
-        // Получение только YYYY-MM-DD для сравнения
         function getISODate(rawDate) {
             if (!rawDate) return "";
             const d = new Date(rawDate);
@@ -197,14 +196,10 @@
             const cont = document.getElementById('vertical-timeline');
             cont.innerHTML = '';
             const today = new Date();
-            
             for (let i = 0; i < 14; i++) {
                 const d = new Date(); d.setDate(today.getDate() + i);
                 const ds = d.toISOString().split('T')[0];
-                
-                // Фильтруем записи, отсекая время из ISO строки даты в таблице
                 const dayAppts = store.appointments.filter(a => getISODate(a.date) === ds).sort((a,b) => a.time.localeCompare(b.time));
-                
                 cont.innerHTML += `
                     <div class="mb-4">
                         <div class="flex items-center gap-3 mb-4">
@@ -217,11 +212,7 @@
                         <div class="ml-6 pl-6 border-l-2 border-dashed border-gray-100 space-y-3">
                             ${dayAppts.map(a => `
                                 <div onclick="openEditAppt('${a.id}')" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-50 flex justify-between items-center active:scale-95 transition-all ${a.status=='completed'?'completed':''}">
-                                    <div>
-                                        <p class="text-xs font-black text-purple-600">${a.time}</p>
-                                        <p class="font-bold text-sm">${a.client_name}</p>
-                                        <p class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">${a.service}</p>
-                                    </div>
+                                    <div><p class="text-xs font-black text-purple-600">${a.time}</p><p class="font-bold text-sm">${a.client_name}</p><p class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">${a.service}</p></div>
                                     <div class="text-xs font-bold text-gray-700 bg-gray-50 px-2 py-1 rounded-lg">${a.price} ₽</div>
                                 </div>
                             `).join('') || '<p class="text-[10px] text-gray-300 italic py-2">Записей нет</p>'}
@@ -233,9 +224,7 @@
         function renderDashboard() {
             const todayStr = new Date().toISOString().split('T')[0];
             const appts = store.appointments.filter(a => getISODate(a.date) === todayStr);
-            
             document.getElementById('today-rev').innerText = appts.reduce((s,a)=>s+Number(a.price),0).toLocaleString() + ' ₽';
-            
             const homeCont = document.getElementById('home-upcoming');
             if (appts.length === 0) {
                 homeCont.innerHTML = '<div class="text-center p-8 bg-white rounded-3xl border-2 border-dashed border-gray-100 text-gray-300 text-sm font-medium">На сегодня записей нет</div>';
@@ -243,10 +232,7 @@
                 homeCont.innerHTML = appts.sort((a,b) => a.time.localeCompare(b.time)).slice(0,3).map(a => `
                     <div onclick="openEditAppt('${a.id}')" class="bg-white p-4 rounded-2xl shadow-sm flex items-center gap-4 border border-gray-50 active:scale-95 transition-all">
                         <div class="w-12 text-center font-black text-purple-600 border-r border-gray-100 pr-2">${a.time}</div>
-                        <div>
-                            <p class="font-bold text-sm">${a.client_name}</p>
-                            <p class="text-[10px] text-gray-400 font-bold uppercase">${a.service}</p>
-                        </div>
+                        <div><p class="font-bold text-sm">${a.client_name}</p><p class="text-[10px] text-gray-400 font-bold uppercase">${a.service}</p></div>
                     </div>
                 `).join('');
             }
@@ -270,25 +256,23 @@
         function showDetails(id) {
             const c = store.clients.find(c => c.id == id);
             const history = store.appointments.filter(a => a.client_id == id).sort((a,b) => b.date.localeCompare(a.date));
-            
             document.getElementById('det-name').innerText = c.name;
             document.getElementById('det-phone').innerText = c.phone;
             document.getElementById('det-visits').innerText = history.length;
             document.getElementById('det-ltv').innerText = history.reduce((s,a)=>s+Number(a.price),0).toLocaleString() + ' ₽';
+            document.getElementById('det-history').innerHTML = history.map(a => `<div class="bg-gray-50 p-4 rounded-2xl flex justify-between items-center border border-gray-100"><div><p class="text-[10px] font-bold text-gray-400 uppercase">${formatDate(a.date)} ${a.time}</p><p class="text-sm font-bold text-gray-800">${a.service}</p></div><p class="font-bold text-sm text-purple-600">${a.price} ₽</p></div>`).join('') || '<p class="text-center text-gray-300 py-4">История пуста</p>';
             
-            document.getElementById('det-history').innerHTML = history.map(a => `
-                <div class="bg-gray-50 p-4 rounded-2xl flex justify-between items-center border border-gray-100">
-                    <div>
-                        <p class="text-[10px] font-bold text-gray-400 uppercase">${formatDate(a.date)}</p>
-                        <p class="text-sm font-bold text-gray-800">${a.service}</p>
-                    </div>
-                    <p class="font-bold text-sm text-purple-600">${a.price} ₽</p>
-                </div>
-            `).join('') || '<p class="text-center text-gray-300 py-4">История пуста</p>';
-            
-            document.getElementById('btn-wa').onclick = () => {
-                const phone = c.phone.replace(/\D/g,'');
-                window.open(`https://wa.me/${phone}?text=${encodeURIComponent('Привет, ' + c.name + '! Напоминаю о нашей записи.')}`);
+            // ЛОГИКА VIBER + БУФЕР
+            document.getElementById('btn-viber').onclick = () => {
+                const next = history[0] || {date: '', time: '', service: ''};
+                const msg = `Привет, ${c.name}! Напоминаю о нашей записи: ${formatDate(next.date)} в ${next.time} (${next.service}). Жду тебя!`;
+                
+                navigator.clipboard.writeText(msg).then(() => {
+                    tg.HapticFeedback.notificationOccurred('success');
+                    tg.showAlert("Текст скопирован! Теперь вставьте его в чат Viber.");
+                    const phone = c.phone.replace(/\D/g,'');
+                    window.open(`viber://chat?number=%2B${phone}`, '_blank');
+                });
             };
             document.getElementById('modal-details').classList.remove('hidden');
         }
@@ -297,12 +281,15 @@
             const total = store.appointments.reduce((s,a)=>s+Number(a.price),0);
             document.getElementById('stat-total-rev').innerText = total.toLocaleString() + ' ₽';
             document.getElementById('stat-total-clients').innerText = store.clients.length;
+            const svcs = {};
+            store.appointments.forEach(a => svcs[a.service] = (svcs[a.service] || 0) + 1);
+            document.getElementById('top-services').innerHTML = Object.entries(svcs).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,c])=>`<div class="flex justify-between items-center text-xs font-bold"><span>${n}</span><span class="text-purple-600">${c}</span></div>`).join('');
         }
 
         function populateSelects() {
             const cS = document.getElementById('appt-client');
             const sS = document.getElementById('appt-service');
-            cS.innerHTML = '<option value="" disabled selected>Выберите клиента</option>' + store.clients.map(c => `<option value="${c.id}" data-name="${c.name}">${c.name}</option>`).join('');
+            cS.innerHTML = '<option value="" disabled selected>Клиент</option>' + store.clients.map(c => `<option value="${c.id}" data-name="${c.name}">${c.name}</option>`).join('');
             sS.innerHTML = '<option value="" disabled selected>Услуга</option>' + store.services.map(s => `<option value="${s.name}" data-price="${s.price}">${s.name}</option>`).join('');
             sS.onchange = () => document.getElementById('appt-price').value = sS.options[sS.selectedIndex].dataset.price;
         }
@@ -347,38 +334,19 @@
         document.getElementById('form-appt').onsubmit = async (e) => {
             e.preventDefault();
             const c = document.getElementById('appt-client');
-            const data = { 
-                id: currentEditId, 
-                client_id: c.value, 
-                client_name: c.options[c.selectedIndex].dataset.name, 
-                service: document.getElementById('appt-service').value, 
-                price: document.getElementById('appt-price').value, 
-                date: document.getElementById('appt-date').value, 
-                time: document.getElementById('appt-time').value 
-            };
-            const action = currentEditId ? 'updateAppointment' : 'addAppointment';
-            const res = await sendData(action, data);
-            if(res.status === 'success') closeModal('modal-appt');
+            const data = { id: currentEditId, client_id: c.value, client_name: c.options[c.selectedIndex].dataset.name, service: document.getElementById('appt-service').value, price: document.getElementById('appt-price').value, date: document.getElementById('appt-date').value, time: document.getElementById('appt-time').value };
+            if((await sendData(currentEditId ? 'updateAppointment' : 'addAppointment', data)).status === 'success') closeModal('modal-appt');
         };
 
         document.getElementById('form-client').onsubmit = async (e) => {
             e.preventDefault();
-            const data = { 
-                name: document.getElementById('c-name').value, 
-                phone: document.getElementById('c-phone').value, 
-                instagram: document.getElementById('c-inst').value 
-            };
-            const res = await sendData('addClient', data);
-            if(res.status === 'success') {
-                closeModal('modal-client');
-                document.getElementById('form-client').reset();
-            }
+            const data = { name: document.getElementById('c-name').value, phone: document.getElementById('c-phone').value, instagram: document.getElementById('c-inst').value };
+            if((await sendData('addClient', data)).status === 'success') { closeModal('modal-client'); document.getElementById('form-client').reset(); }
         };
 
         async function handleStatus(act) {
-            if(act === 'deleteAppointment' && !confirm('Удалить запись?')) return;
-            const res = await sendData(act, {id:currentEditId});
-            if(res.status === 'success') closeModal('modal-appt');
+            if(act === 'deleteAppointment' && !confirm('Удалить?')) return;
+            if((await sendData(act, {id:currentEditId})).status === 'success') closeModal('modal-appt');
         }
 
         function switchTab(id) {
