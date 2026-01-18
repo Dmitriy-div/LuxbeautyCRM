@@ -3,90 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CRM Pro</title>
+    <title>CRM Pro Ultimate</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #F8F9FA; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: #F8F9FA; -webkit-tap-highlight-color: transparent; color: #1A1A1A; }
         .nav-active { color: #7C3AED; }
         .page { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .status-confirmed { border-left: 4px solid #10B981; }
-        .status-waiting { border-left: 4px solid #F59E0B; }
-        .status-cancelled { border-left: 4px solid #EF4444; opacity: 0.6; }
+        .status-confirmed { border-left: 5px solid #10B981; }
+        .status-waiting { border-left: 5px solid #F59E0B; }
+        .status-cancelled { border-left: 5px solid #EF4444; opacity: 0.5; }
     </style>
 </head>
-<body class="pb-28">
+<body class="pb-32">
 
     <div id="loader" class="fixed inset-0 bg-white z-[100] flex items-center justify-center">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
     </div>
 
     <div id="page-home" class="page p-5">
-        <h1 class="text-2xl font-extrabold mb-5 text-gray-900">Дашборд</h1>
+        <h1 class="text-2xl font-black mb-6">Главная</h1>
         <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[2.5rem] p-7 text-white shadow-xl mb-8">
             <div class="flex justify-between items-start mb-4">
                 <div>
-                    <p class="text-indigo-100 text-[10px] font-bold uppercase tracking-wider mb-1">Прибыль сегодня</p>
+                    <p class="text-indigo-100 text-[10px] font-bold uppercase tracking-wider mb-1">Чистая прибыль сегодня</p>
                     <h2 id="today-profit" class="text-4xl font-black">0 ₽</h2>
                 </div>
                 <button onclick="findFreeSlots()" class="bg-white/20 p-2.5 rounded-2xl backdrop-blur-md text-[10px] font-bold uppercase">Окна</button>
             </div>
-            <p id="today-rev-sub" class="text-xs text-indigo-100 opacity-90">Загрузка данных...</p>
+            <p id="today-rev-sub" class="text-xs text-indigo-100 opacity-90">Загрузка...</p>
         </div>
-        <h3 class="font-bold text-gray-800 mb-4 px-1">Ближайшие записи</h3>
+        <h3 class="font-bold text-gray-800 mb-4 ml-1 flex items-center gap-2"><i class="far fa-calendar-check text-purple-500"></i> План на сегодня</h3>
         <div id="home-upcoming" class="space-y-3"></div>
     </div>
 
     <div id="page-calendar" class="page p-5 hidden">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-extrabold text-gray-900">График</h1>
-            <button onclick="findFreeSlots()" class="text-purple-600 text-[10px] font-bold bg-purple-50 px-4 py-2 rounded-xl border border-purple-100 uppercase">Поиск окон</button>
+            <h1 class="text-2xl font-black">График</h1>
+            <button onclick="findFreeSlots()" class="text-purple-600 text-[10px] font-bold bg-purple-50 px-4 py-2 rounded-xl border border-purple-100">ПОИСК ОКОН</button>
         </div>
         <div id="vertical-timeline" class="space-y-8"></div>
     </div>
 
     <div id="page-clients" class="page p-5 hidden">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-extrabold text-gray-900">Клиенты</h1>
+            <h1 class="text-2xl font-black text-gray-900">База</h1>
             <button onclick="openClientModal()" class="w-12 h-12 bg-gray-900 text-white rounded-2xl flex items-center justify-center shadow-lg"><i class="fas fa-plus"></i></button>
         </div>
         <div class="relative mb-6">
-            <i class="fas fa-search absolute left-4 top-4 text-gray-300"></i>
-            <input type="text" id="client-search" placeholder="Поиск по имени или телефону..." class="w-full bg-white p-4 pl-12 rounded-2xl shadow-sm border border-gray-100 outline-none text-sm">
+            <i class="fas fa-search absolute left-4 top-4 text-gray-300 text-sm"></i>
+            <input type="text" id="client-search" placeholder="Поиск по имени..." class="w-full bg-white p-4 pl-12 rounded-2xl shadow-sm border border-gray-100 outline-none text-sm">
         </div>
         <div id="clients-list" class="space-y-3"></div>
     </div>
 
     <div id="page-stats" class="page p-5 hidden">
-        <h1 class="text-2xl font-extrabold mb-6 text-gray-900">Отчеты</h1>
+        <h1 class="text-2xl font-black mb-6">Отчеты</h1>
         <div class="grid grid-cols-2 gap-4 mb-6">
             <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-50">
-                <p class="text-gray-400 text-[9px] font-bold uppercase mb-1">Чистый доход</p>
+                <p class="text-gray-400 text-[9px] font-bold uppercase mb-1 tracking-widest">Чистый доход</p>
                 <p id="stat-net-profit" class="text-xl font-black text-green-600">0 ₽</p>
             </div>
             <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-50">
-                <p class="text-gray-400 text-[9px] font-bold uppercase mb-1">Маржа</p>
+                <p class="text-gray-400 text-[9px] font-bold uppercase mb-1 tracking-widest">Маржа</p>
                 <p id="stat-margin" class="text-xl font-black text-purple-600">0%</p>
             </div>
         </div>
-        <div class="bg-white p-7 rounded-[2.5rem] shadow-sm border border-gray-50">
-            <h4 class="font-bold text-sm mb-5 text-gray-800 uppercase tracking-tighter">Топ услуг</h4>
-            <div id="top-services" class="space-y-4"></div>
+        <div class="bg-white p-7 rounded-[2.5rem] shadow-sm">
+            <h4 class="font-bold text-sm mb-5 text-gray-800 uppercase tracking-tighter">Популярные услуги</h4>
+            <div id="top-services" class="space-y-4 text-sm font-bold"></div>
         </div>
     </div>
 
     <div id="modal-appt" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-appt')"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7 max-h-[92vh] overflow-y-auto shadow-2xl">
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7 max-h-[92vh] overflow-y-auto">
             <div id="appt-reminders" class="flex gap-2 mb-6 hidden">
-                <button onclick="sendRemind('viber')" class="flex-1 bg-purple-100 text-purple-700 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2"><i class="fab fa-viber"></i> Viber</button>
-                <button onclick="sendRemind('wa')" class="flex-1 bg-green-100 text-green-700 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+                <button onclick="sendRemind('viber')" class="flex-1 bg-purple-600 text-white py-4 rounded-2xl font-bold text-[10px] flex items-center justify-center gap-2 uppercase"><i class="fab fa-viber text-sm"></i> Viber</button>
+                <button onclick="sendRemind('wa')" class="flex-1 bg-green-500 text-white py-4 rounded-2xl font-bold text-[10px] flex items-center justify-center gap-2 uppercase"><i class="fab fa-whatsapp text-sm"></i> WhatsApp</button>
             </div>
             <form id="form-appt" class="space-y-4">
-                <select id="appt-status" class="w-full bg-gray-100 p-4 rounded-2xl font-bold border-none outline-none text-sm">
+                <select id="appt-status" class="w-full bg-gray-100 p-4 rounded-2xl font-bold text-sm outline-none">
                     <option value="confirmed">✅ Подтверждена</option>
                     <option value="waiting">⏳ Ожидает</option>
                     <option value="cancelled">❌ Отменена</option>
@@ -107,62 +107,62 @@
                     <input type="date" id="appt-date" required class="w-1/2 bg-gray-50 p-4 rounded-2xl font-bold text-sm">
                     <input type="time" id="appt-time" required class="w-1/2 bg-gray-50 p-4 rounded-2xl font-bold text-sm">
                 </div>
-                <div id="appt-edit-actions" class="hidden flex justify-center pt-2">
-                    <button type="button" onclick="handleStatus('deleteAppointment')" class="text-red-500 font-bold text-sm py-2">Удалить запись</button>
+                <div id="appt-edit-actions" class="hidden text-center pt-2">
+                    <button type="button" onclick="handleStatus('deleteAppointment')" class="text-red-500 font-black text-xs uppercase tracking-widest">Удалить запись</button>
                 </div>
-                <div class="h-12"></div>
+                <div class="h-10"></div>
             </form>
         </div>
     </div>
 
     <div id="modal-client" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-client')"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7 shadow-2xl">
-            <h2 class="text-xl font-bold mb-6 text-center text-gray-800">Карточка клиента</h2>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7">
+            <h2 class="text-xl font-black mb-6 text-center text-gray-800">Клиент</h2>
             <form id="form-client" class="space-y-4">
                 <input type="text" id="c-name" placeholder="Имя Фамилия" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
                 <input type="tel" id="c-phone" placeholder="Телефон" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
                 <input type="text" id="c-inst" placeholder="Instagram / Соцсеть" class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
-                <textarea id="c-notes" placeholder="Заметки (аллергия, особенности...)" class="w-full bg-gray-50 p-4 rounded-2xl font-medium outline-none h-28"></textarea>
-                <div class="h-12"></div>
+                <textarea id="c-notes" placeholder="Заметки о клиенте..." class="w-full bg-gray-50 p-4 rounded-2xl font-medium outline-none h-28"></textarea>
+                <div class="h-10"></div>
             </form>
         </div>
     </div>
 
     <div id="modal-details" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-md" onclick="closeDetails()"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-8 max-h-[88vh] overflow-y-auto shadow-2xl">
-            <div class="flex justify-between items-start mb-4">
-                <div id="det-name" class="text-2xl font-black text-gray-900"></div>
-                <button onclick="editCurrentClient()" class="text-purple-600 font-bold text-[10px] bg-purple-50 px-4 py-2 rounded-xl border border-purple-100 uppercase">Изменить</button>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-8 max-h-[88vh] overflow-y-auto">
+            <div class="flex justify-between items-start mb-6">
+                <div id="det-name" class="text-2xl font-black text-gray-900 leading-tight"></div>
+                <button onclick="editCurrentClient()" class="text-purple-600 font-bold text-[10px] bg-purple-50 px-4 py-2 rounded-xl uppercase">Изменить</button>
             </div>
-            <div id="det-notes" class="bg-amber-50 p-4 rounded-2xl text-xs text-amber-800 font-medium mb-6 border border-amber-100 hidden"></div>
+            <div id="det-notes" class="bg-amber-50 p-5 rounded-3xl text-xs text-amber-800 font-medium mb-6 border border-amber-100 hidden"></div>
             <div class="flex gap-4 mb-8">
-                <a id="det-viber" href="#" class="flex-1 bg-purple-600 text-white p-4 rounded-2xl text-center shadow-lg shadow-purple-100"><i class="fab fa-viber text-xl"></i></a>
-                <a id="det-wa" href="#" class="flex-1 bg-green-500 text-white p-4 rounded-2xl text-center shadow-lg shadow-green-100"><i class="fab fa-whatsapp text-xl"></i></a>
-                <a id="det-call" href="#" class="flex-1 bg-gray-900 text-white p-4 rounded-2xl text-center shadow-lg shadow-gray-200"><i class="fas fa-phone-alt text-lg"></i></a>
+                <button id="det-viber" class="flex-1 bg-purple-600 text-white p-5 rounded-3xl text-center shadow-lg"><i class="fab fa-viber text-xl"></i></button>
+                <button id="det-wa" class="flex-1 bg-green-500 text-white p-5 rounded-3xl text-center shadow-lg"><i class="fab fa-whatsapp text-xl"></i></button>
+                <button id="det-call" class="flex-1 bg-gray-900 text-white p-5 rounded-3xl text-center shadow-lg"><i class="fas fa-phone-alt text-lg"></i></button>
             </div>
-            <div id="det-history" class="space-y-3 pb-8"></div>
+            <div id="det-history" class="space-y-3 pb-6"></div>
         </div>
     </div>
 
-    <nav class="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-xl border-t border-gray-100 flex justify-around py-4 pb-9 z-40">
-        <button onclick="switchTab('page-home')" class="nav-btn nav-active flex flex-col items-center gap-1.5 w-1/4" data-target="page-home">
-            <i class="fas fa-home text-xl"></i><span class="text-[9px] font-bold uppercase tracking-tighter">Обзор</span>
+    <nav class="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-xl border-t border-gray-100 flex justify-around py-4 pb-10 z-40">
+        <button onclick="switchTab('page-home')" class="nav-btn nav-active flex flex-col items-center gap-1 w-1/4" data-target="page-home">
+            <i class="fas fa-home text-xl"></i><span class="text-[9px] font-bold uppercase">Обзор</span>
         </button>
-        <button onclick="switchTab('page-calendar')" class="nav-btn text-gray-300 flex flex-col items-center gap-1.5 w-1/4" data-target="page-calendar">
-            <i class="fas fa-calendar-check text-xl"></i><span class="text-[9px] font-bold uppercase tracking-tighter">График</span>
+        <button onclick="switchTab('page-calendar')" class="nav-btn text-gray-300 flex flex-col items-center gap-1 w-1/4" data-target="page-calendar">
+            <i class="fas fa-calendar-alt text-xl"></i><span class="text-[9px] font-bold uppercase">График</span>
         </button>
-        <button onclick="switchTab('page-clients')" class="nav-btn text-gray-300 flex flex-col items-center gap-1.5 w-1/4" data-target="page-clients">
-            <i class="fas fa-user-friends text-xl"></i><span class="text-[9px] font-bold uppercase tracking-tighter">База</span>
+        <button onclick="switchTab('page-clients')" class="nav-btn text-gray-300 flex flex-col items-center gap-1 w-1/4" data-target="page-clients">
+            <i class="fas fa-user-friends text-xl"></i><span class="text-[9px] font-bold uppercase">База</span>
         </button>
-        <button onclick="switchTab('page-stats')" class="nav-btn text-gray-300 flex flex-col items-center gap-1.5 w-1/4" data-target="page-stats">
-            <i class="fas fa-chart-bar text-xl"></i><span class="text-[9px] font-bold uppercase tracking-tighter">Отчеты</span>
+        <button onclick="switchTab('page-stats')" class="nav-btn text-gray-300 flex flex-col items-center gap-1 w-1/4" data-target="page-stats">
+            <i class="fas fa-chart-bar text-xl"></i><span class="text-[9px] font-bold uppercase">Отчеты</span>
         </button>
     </nav>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbz-3HZQYr5DC_ktkR1t3HshnySA0rbf3tN49NL59nDBEDhqMlbZENR3A7YnFHywvQq7-w/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbz6wgmBYevBLhjjNKN7HJy3KF7_9vhuuwax6VxnK1ZgVUazEEkvnbV_-BFaBU5W83ETmg/exec";
         const tg = window.Telegram.WebApp;
         let store = { clients: [], appointments: [], services: [] };
         let currentEditId = null;
@@ -187,10 +187,9 @@
 
         async function sendData(action, payload) {
             tg.MainButton.showProgress();
-            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...payload }) });
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...payload }) });
             await loadData();
             tg.MainButton.hideProgress();
-            return await res.json();
         }
 
         function refreshUI() {
@@ -206,10 +205,9 @@
             const busy = store.appointments.filter(a => a.date.includes(today) && a.status !== 'cancelled').map(a => a.time);
             const allSlots = ["09:00", "11:00", "13:00", "15:00", "17:00", "19:00", "21:00"];
             const free = allSlots.filter(s => !busy.includes(s));
-            tg.showPopup({ title: 'Свободное время', message: free.length ? free.join(' | ') : 'Окон нет', buttons: [{type: 'close'}] });
+            tg.showPopup({ title: 'Свободно', message: free.length ? free.join(' | ') : 'Окон нет', buttons: [{type: 'close'}] });
         }
 
-        // ВОЗВРАТ КНОПКИ +ЗАПИСЬ В ГРАФИКЕ
         function renderCalendar() {
             const cont = document.getElementById('vertical-timeline');
             cont.innerHTML = '';
@@ -220,24 +218,24 @@
                 const dayAppts = store.appointments.filter(a => a.date.includes(ds)).sort((a,b) => a.time.localeCompare(b.time));
                 cont.innerHTML += `
                     <div>
-                        <div class="flex justify-between items-center mb-4">
+                        <div class="flex justify-between items-center mb-4 px-1">
                             <span class="font-bold text-gray-400 text-[10px] uppercase tracking-widest">${d.toLocaleDateString('ru',{weekday:'short', day:'numeric', month:'short'})}</span>
-                            <button onclick="fastAddAppt('${ds}')" class="text-purple-600 text-[10px] font-black uppercase tracking-tighter">+ Новая запись</button>
+                            <button onclick="fastAddAppt('${ds}')" class="text-purple-600 text-[10px] font-black uppercase">+ ЗАПИСЬ</button>
                         </div>
                         <div class="space-y-3">
                             ${dayAppts.map(a => `
-                                <div onclick="openEditAppt('${a.id}')" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-50 flex justify-between items-center status-${a.status}">
+                                <div onclick="openEditAppt('${a.id}')" class="bg-white p-4 rounded-3xl shadow-sm border border-gray-50 flex justify-between items-center status-${a.status}">
                                     <div>
                                         <p class="text-[10px] font-black ${a.status=='cancelled'?'text-gray-300':'text-purple-600'}">${a.time}</p>
                                         <p class="font-bold text-sm text-gray-800">${a.client_name}</p>
-                                        <p class="text-[9px] text-gray-400 uppercase font-bold">${a.service}</p>
+                                        <p class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">${a.service}</p>
                                     </div>
                                     <div class="text-right">
                                         <p class="font-black text-sm text-gray-900">${a.price} ₽</p>
                                         <p class="text-[8px] text-red-400 font-bold">-${a.costs || 0} ₽</p>
                                     </div>
                                 </div>
-                            `).join('') || '<div class="p-6 border-2 border-dashed border-gray-100 rounded-3xl text-center text-[10px] text-gray-300 font-bold uppercase tracking-widest">Нет записей</div>'}
+                            `).join('') || '<div class="p-6 border-2 border-dashed border-gray-100 rounded-[2rem] text-center text-[10px] text-gray-300 font-bold uppercase tracking-widest">Нет записей</div>'}
                         </div>
                     </div>`;
             }
@@ -246,32 +244,32 @@
         function renderDashboard() {
             const todayStr = new Date().toISOString().split('T')[0];
             const todayAppts = store.appointments.filter(a => a.date.includes(todayStr) && a.status !== 'cancelled');
-            const revenue = todayAppts.reduce((s,a) => s + Number(a.price), 0);
+            const rev = todayAppts.reduce((s,a) => s + Number(a.price), 0);
             const costs = todayAppts.reduce((s,a) => s + Number(a.costs || 0), 0);
-            document.getElementById('today-profit').innerText = (revenue - costs).toLocaleString() + ' ₽';
-            document.getElementById('today-rev-sub').innerText = `Выручка: ${revenue} ₽ | Расходники: ${costs} ₽`;
+            document.getElementById('today-profit').innerText = (rev - costs).toLocaleString() + ' ₽';
+            document.getElementById('today-rev-sub').innerText = `Выручка: ${rev} ₽ | Расходники: ${costs} ₽`;
             document.getElementById('home-upcoming').innerHTML = todayAppts.slice(0,4).map(a => `
-                <div onclick="openEditAppt('${a.id}')" class="bg-white p-4 rounded-[1.5rem] shadow-sm flex justify-between items-center border border-gray-50">
+                <div onclick="openEditAppt('${a.id}')" class="bg-white p-5 rounded-[1.5rem] shadow-sm flex justify-between items-center border border-gray-50">
                     <div class="flex items-center gap-4">
-                        <div class="w-1.5 h-1.5 rounded-full ${a.status == 'confirmed' ? 'bg-green-500' : 'bg-amber-500'}"></div>
+                        <div class="w-2 h-2 rounded-full ${a.status == 'confirmed' ? 'bg-green-500' : 'bg-amber-500'} shadow-sm"></div>
                         <span class="font-black text-purple-600 w-10 text-sm">${a.time}</span>
                         <span class="font-bold text-sm text-gray-800">${a.client_name}</span>
                     </div>
                     <i class="fas fa-chevron-right text-gray-200 text-xs"></i>
                 </div>
-            `).join('') || '<div class="text-center p-10 bg-white rounded-[2rem] text-gray-300 text-xs font-medium">Записей пока нет</div>';
+            `).join('') || '<div class="text-center p-12 bg-white rounded-[2.5rem] text-gray-300 text-xs font-bold uppercase tracking-widest">На сегодня пусто</div>';
         }
 
         function renderClients() {
             const term = document.getElementById('client-search').value.toLowerCase();
             const cont = document.getElementById('clients-list');
             cont.innerHTML = store.clients.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term)).map(c => `
-                <div onclick="showDetails('${c.id}')" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-50 flex items-center justify-between">
+                <div onclick="showDetails('${c.id}')" class="bg-white p-4 rounded-3xl shadow-sm border border-gray-50 flex items-center justify-between">
                     <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-black text-lg">${c.name[0]}</div>
-                        <div><p class="font-bold text-sm text-gray-900">${c.name}</p><p class="text-[10px] text-gray-400 font-bold">${c.phone}</p></div>
+                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-black text-xl">${c.name[0]}</div>
+                        <div><p class="font-black text-sm text-gray-900">${c.name}</p><p class="text-[10px] text-gray-400 font-bold">${c.phone}</p></div>
                     </div>
-                    ${c.notes ? '<div class="bg-amber-100 text-amber-600 w-6 h-6 rounded-lg flex items-center justify-center text-[10px]"><i class="fas fa-sticky-note"></i></div>' : '<i class="fas fa-chevron-right text-gray-100"></i>'}
+                    ${c.notes ? '<div class="bg-amber-100 text-amber-600 w-7 h-7 rounded-xl flex items-center justify-center text-xs"><i class="fas fa-sticky-note"></i></div>' : '<i class="fas fa-chevron-right text-gray-100"></i>'}
                 </div>
             `).join('');
         }
@@ -282,9 +280,11 @@
             currentClientEditId = id;
             document.getElementById('det-name').innerText = c.name;
             const cleanPhone = c.phone.replace(/\D/g, '');
-            document.getElementById('det-viber').href = `viber://chat?number=${cleanPhone}`;
-            document.getElementById('det-wa').href = `https://wa.me/${cleanPhone}`;
-            document.getElementById('det-call').href = `tel:${c.phone}`;
+            
+            // ИСПРАВЛЕНИЕ ВАЙБЕР И ВАТСАП В ДЕТАЛЯХ ЧЕРЕЗ tg.openLink
+            document.getElementById('det-viber').onclick = () => tg.openLink(`viber://chat?number=${cleanPhone}`);
+            document.getElementById('det-wa').onclick = () => tg.openLink(`https://wa.me/${cleanPhone}`);
+            document.getElementById('det-call').onclick = () => tg.openLink(`tel:${c.phone}`);
             
             const notesEl = document.getElementById('det-notes');
             if(c.notes) { notesEl.innerText = "📌 ЗАМЕТКА: " + c.notes; notesEl.classList.remove('hidden'); }
@@ -300,24 +300,33 @@
             document.getElementById('modal-details').classList.remove('hidden');
         }
 
-        // ОТПРАВКА НАПОМИНАНИЯ ИЗ ЗАПИСИ
+        // ИСПРАВЛЕНИЕ ОТПРАВКИ НАПОМИНАНИЙ ЧЕРЕЗ tg.openLink
         function sendRemind(type) {
             const a = store.appointments.find(i => i.id == currentEditId);
             const c = store.clients.find(i => i.id == a.client_id);
             const date = new Date(a.date).toLocaleDateString('ru', {day:'numeric', month:'long'});
-            const text = encodeURIComponent(`Привет, ${c.name}! Напоминаю о нашей записи: ${date} в ${a.time}. Жду тебя!`);
+            const text = `Привет, ${c.name}! Напоминаю о нашей записи: ${date} в ${a.time}. Жду тебя!`;
             const phone = c.phone.replace(/\D/g, '');
-            if(type === 'viber') window.location.href = `viber://forward?text=${text}`;
-            if(type === 'wa') window.location.href = `https://wa.me/${phone}?text=${text}`;
+            
+            let url = (type === 'viber') 
+                ? `viber://forward?text=${encodeURIComponent(text)}` 
+                : `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+            
+            tg.openLink(url);
         }
 
         function renderStats() {
             const appts = store.appointments.filter(a => a.status !== 'cancelled');
             const rev = appts.reduce((s,a) => s + Number(a.price), 0);
             const costs = appts.reduce((s,a) => s + Number(a.costs || 0), 0);
-            const profit = rev - costs;
-            document.getElementById('stat-net-profit').innerText = profit.toLocaleString() + ' ₽';
-            document.getElementById('stat-margin').innerText = rev ? Math.round((profit/rev)*100) + '%' : '0%';
+            document.getElementById('stat-net-profit').innerText = (rev - costs).toLocaleString() + ' ₽';
+            document.getElementById('stat-margin').innerText = rev ? Math.round(((rev-costs)/rev)*100) + '%' : '0%';
+            
+            const svcs = {};
+            appts.forEach(a => svcs[a.service] = (svcs[a.service] || 0) + 1);
+            document.getElementById('top-services').innerHTML = Object.entries(svcs).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,c])=>`
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl mb-2"><span>${n}</span><span class="text-purple-600">${c}</span></div>
+            `).join('');
         }
 
         function populateSelects() {
