@@ -3,37 +3,460 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Beauty CRM</title>
+    <title>Beauty CRM Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #F8F9FA; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background-color: #F8F9FA; color: #1A1A1A; -webkit-tap-highlight-color: transparent; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .gradient-card { background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%); }
         .nav-active { color: #7C3AED; }
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #7C3AED; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
+        .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .completed-task { opacity: 0.6; filter: grayscale(0.5); }
     </style>
 </head>
-<body class="text-gray-800 pb-20 select-none">
+<body class="pb-24 select-none">
 
-    <div id="loader-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center transition-opacity duration-300">
+    <div id="loader-screen" class="fixed inset-0 bg-white z-[60] flex flex-col items-center justify-center transition-opacity duration-300">
         <div class="loader mb-4"></div>
-        <p class="text-gray-500 text-sm font-medium">Синхронизация...</p>
+        <p class="text-gray-500 text-sm font-medium">Загрузка данных...</p>
     </div>
-
-    <button id="main-fab" onclick="openModal('modal-appointment')" class="fixed bottom-24 right-5 w-14 h-14 bg-purple-600 text-white rounded-full shadow-xl flex items-center justify-center text-2xl active:scale-90 transition-all z-40">
-        <i class="fas fa-plus"></i>
-    </button>
 
     <div id="page-home" class="page p-4 block">
         <div class="flex justify-between items-center mb-6">
             <div>
+                <h1 class="text-2xl font-bold text-gray-900">Главная</h1>
+                <p class="text-xs text-gray-500 capitalize" id="current-date-header">...</p>
+            </div>
+            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 border border-purple-200 shadow-sm">
+                <i class="fas fa-magic"></i>
+            </div>
+        </div>
+
+        <div class="gradient-card rounded-3xl p-6 text-white shadow-lg mb-6 relative overflow-hidden">
+            <div class="relative z-10">
+                <div class="flex items-center gap-2 mb-2 opacity-80 text-xs font-medium"><i class="fas fa-calendar-check"></i> Сегодня</div>
+                <div class="text-4xl font-bold mb-1" id="today-revenue">0 ₽</div>
+                <div class="text-xs opacity-80" id="today-count">0 записей</div>
+            </div>
+            <div class="absolute right-[-10px] bottom-[-10px] text-white/10 text-8xl rotate-12"><i class="fas fa-spa"></i></div>
+        </div>
+
+        <div class="mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-gray-800 text-base">Ближайшие записи</h3>
+                <span class="text-[10px] bg-purple-100 text-purple-600 px-2 py-1 rounded-full font-bold uppercase">Live</span>
+            </div>
+            <div id="upcoming-list" class="space-y-3"></div>
+        </div>
+
+        <h3 class="font-bold text-gray-800 mb-3 text-base">Быстрые действия</h3>
+        <div class="grid grid-cols-2 gap-3">
+            <button onclick="openModal('modal-appointment')" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3 active:scale-95 transition-all">
+                <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center"><i class="fas fa-plus"></i></div>
+                <span class="text-sm font-semibold">Записать</span>
+            </button>
+            <button onclick="switchTab('page-clients')" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3 active:scale-95 transition-all">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center"><i class="fas fa-users"></i></div>
+                <span class="text-sm font-semibold">Клиенты</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="page-calendar" class="page p-4 hidden">
+        <h1 class="text-2xl font-bold text-gray-900 mb-6">График</h1>
+        <div id="vertical-timeline" class="space-y-6 pb-20"></div>
+    </div>
+
+    <div id="page-clients" class="page p-4 hidden">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-2xl font-bold text-gray-900">Клиенты</h1>
+            <button onclick="openModal('modal-client')" class="w-10 h-10 bg-gray-900 text-white rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+        <div class="bg-white p-3 rounded-2xl flex items-center mb-4 shadow-sm border border-gray-100">
+            <i class="fas fa-search text-gray-400 ml-2 mr-3"></i>
+            <input type="text" id="client-search" placeholder="Поиск по имени или телефону..." class="w-full outline-none text-sm bg-transparent">
+        </div>
+        <div class="space-y-2 pb-16" id="clients-list"></div>
+    </div>
+
+    <div id="modal-appointment" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-appointment')"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] p-6 animate-fadeIn shadow-2xl">
+            <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
+            <h2 id="appt-modal-title" class="text-xl font-bold mb-6 text-gray-800 text-center">Новая запись</h2>
+            <form id="form-appointment" class="space-y-4">
+                <select id="appt-client" required class="w-full bg-gray-50 p-4 rounded-2xl outline-none font-medium border border-gray-100"></select>
+                <select id="appt-service" required class="w-full bg-gray-50 p-4 rounded-2xl outline-none font-medium border border-gray-100"></select>
+                <div class="flex gap-3">
+                    <input type="date" id="appt-date" required class="w-1/2 bg-gray-50 p-4 rounded-2xl outline-none text-sm border border-gray-100">
+                    <input type="time" id="appt-time" required class="w-1/2 bg-gray-50 p-4 rounded-2xl outline-none text-sm border border-gray-100">
+                </div>
+                <div id="edit-actions" class="hidden grid grid-cols-2 gap-3 pt-2">
+                    <button type="button" onclick="handleCompleteAppt()" class="bg-green-50 text-green-600 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 border border-green-100"><i class="fas fa-check"></i> Готово</button>
+                    <button type="button" onclick="handleDeleteAppt()" class="bg-red-50 text-red-500 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 border border-red-100"><i class="fas fa-trash"></i> Удалить</button>
+                </div>
+                <div class="h-8"></div> </form>
+        </div>
+    </div>
+
+    <div id="modal-client" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-client')"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] p-6 animate-fadeIn shadow-2xl">
+            <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
+            <h2 id="client-modal-title" class="text-xl font-bold mb-6 text-gray-800 text-center">Данные клиента</h2>
+            <form id="form-client" class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-4">ФИО Клиента</label>
+                    <input type="text" name="name" placeholder="Имя Фамилия" required class="w-full bg-gray-50 p-4 rounded-2xl outline-none font-semibold border border-gray-100">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-4">Телефон</label>
+                    <input type="tel" name="phone" id="phone-mask" value="+375" required class="w-full bg-gray-50 p-4 rounded-2xl outline-none font-semibold border border-gray-100">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-4">Instagram</label>
+                    <input type="text" name="instagram" placeholder="@username" class="w-full bg-gray-50 p-4 rounded-2xl outline-none font-semibold border border-gray-100">
+                </div>
+                <div class="h-8"></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-lg border-t border-gray-100 pt-3 pb-6 px-8 flex justify-between items-center z-40 h-[85px]">
+        <button onclick="switchTab('page-home')" class="flex flex-col items-center gap-1 w-16 nav-btn nav-active" data-target="page-home">
+            <i class="fas fa-home text-xl"></i><span class="text-[10px] font-bold uppercase tracking-tighter">Главная</span>
+        </button>
+        <button onclick="switchTab('page-calendar')" class="flex flex-col items-center gap-1 w-16 nav-btn text-gray-300" data-target="page-calendar">
+            <i class="fas fa-calendar-alt text-xl"></i><span class="text-[10px] font-bold uppercase tracking-tighter">График</span>
+        </button>
+        <button onclick="switchTab('page-clients')" class="flex flex-col items-center gap-1 w-16 nav-btn text-gray-300" data-target="page-clients">
+            <i class="fas fa-user-friends text-xl"></i><span class="text-[10px] font-bold uppercase tracking-tighter">База</span>
+        </button>
+    </div>
+
+    <script>
+        // ВАЖНО: Вставь сюда свой URL после Deploy
+        const API_URL = "https://script.google.com/macros/s/AKfycbwWpt1gxLWayHlvuQ-WI8T57o5M2-iuNFw2roUP6DXc7Et2Et_pFmA8YbxTIUfRTXutZg/exec"; 
+        
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.enableClosingConfirmation();
+
+        let store = { clients: [], appointments: [], services: [] };
+        let editMode = { type: null, id: null };
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', async () => {
+            setTodayDateHeader();
+            loadFromCache();
+            await loadData();
+            hideLoader();
+        });
+
+        function hideLoader() {
+            document.getElementById('loader-screen').classList.add('opacity-0');
+            setTimeout(() => document.getElementById('loader-screen').classList.add('hidden'), 300);
+        }
+
+        // Телефонная маска (+375)
+        document.getElementById('phone-mask').addEventListener('input', function (e) {
+            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,2})(\d{0,3})(\d{0,2})(\d{0,2})/);
+            if (!x[2]) { e.target.value = '+375'; return; }
+            e.target.value = '+375 (' + x[2] + ') ' + x[3] + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+        });
+
+        async function loadData() {
+            try {
+                const res = await fetch(`${API_URL}?action=getData`);
+                const data = await res.json();
+                if (data.status === 'success') {
+                    store.clients = data.clients || [];
+                    store.appointments = data.appointments || [];
+                    store.services = data.services || [];
+                    localStorage.setItem('beauty_crm_cache', JSON.stringify(store));
+                    refreshUI();
+                }
+            } catch (e) { console.error("Load error", e); }
+        }
+
+        function loadFromCache() {
+            const cached = localStorage.getItem('beauty_crm_cache');
+            if (cached) {
+                store = JSON.parse(cached);
+                refreshUI();
+            }
+        }
+
+        async function sendData(action, payload) {
+            tg.MainButton.showProgress();
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action, ...payload }),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                });
+                const res = await response.json();
+                if (res.status === 'success') {
+                    tg.HapticFeedback.notificationOccurred('success');
+                    await loadData();
+                }
+                return res;
+            } catch (e) {
+                alert("Ошибка сохранения: " + e.message);
+            } finally {
+                tg.MainButton.hideProgress();
+            }
+        }
+
+        function refreshUI() {
+            renderDashboard();
+            renderClients();
+            renderVerticalCalendar();
+            renderUpcoming();
+            populateSelects();
+        }
+
+        function renderDashboard() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayAppts = store.appointments.filter(a => String(a.date).startsWith(today));
+            const revenue = todayAppts.reduce((s, a) => s + Number(a.price || 0), 0);
+            
+            document.getElementById('today-revenue').innerText = `${revenue.toLocaleString()} ₽`;
+            document.getElementById('today-count').innerText = `${todayAppts.length} записей на сегодня`;
+        }
+
+        function renderUpcoming() {
+            const container = document.getElementById('upcoming-list');
+            const nowStr = new Date().toISOString().split('T')[0];
+            
+            const upcoming = store.appointments
+                .filter(a => String(a.date) >= nowStr && a.status !== 'completed')
+                .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
+                .slice(0, 3);
+
+            container.innerHTML = upcoming.length ? '' : '<div class="text-xs text-gray-400 bg-white p-6 rounded-2xl text-center border border-dashed border-gray-200">Сегодня записей нет</div>';
+            
+            upcoming.forEach(app => {
+                container.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center animate-fadeIn" onclick="editAppt('${app.id}')">
+                        <div class="flex gap-4">
+                            <div class="flex flex-col items-center border-r border-gray-50 pr-4">
+                                <span class="text-lg font-bold text-gray-800">${app.time}</span>
+                                <span class="text-[9px] font-extrabold text-purple-500 uppercase">Ближайший</span>
+                            </div>
+                            <div>
+                                <div class="font-bold text-sm text-gray-800">${app.client_name}</div>
+                                <div class="text-xs text-gray-500">${app.service}</div>
+                            </div>
+                        </div>
+                        <div class="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center"><i class="fas fa-chevron-right text-[10px]"></i></div>
+                    </div>`;
+            });
+        }
+
+        function renderVerticalCalendar() {
+            const container = document.getElementById('vertical-timeline');
+            container.innerHTML = '';
+            const today = new Date();
+            const days = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+
+            for (let i = 0; i < 14; i++) {
+                const d = new Date(); d.setDate(today.getDate() + i);
+                const dateStr = d.toISOString().split('T')[0];
+                const isToday = i === 0;
+
+                const dayAppts = store.appointments.filter(a => String(a.date).startsWith(dateStr)).sort((a,b) => String(a.time).localeCompare(String(b.time)));
+                
+                const dayBlock = document.createElement('div');
+                dayBlock.className = "animate-fadeIn mb-4";
+                dayBlock.innerHTML = `
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="flex flex-col items-center justify-center min-w-[50px] h-[55px] ${isToday ? 'bg-purple-600 text-white shadow-md' : 'bg-white text-gray-400 border border-gray-100'} rounded-2xl">
+                            <span class="text-[8px] font-bold uppercase">${days[d.getDay()].slice(0, 3)}</span>
+                            <span class="text-lg font-bold">${d.getDate()}</span>
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-bold text-sm ${isToday ? 'text-purple-600' : 'text-gray-800'}">${isToday ? 'Сегодня' : days[d.getDay()]}</div>
+                            <div class="text-[10px] text-gray-400 uppercase font-bold tracking-tighter">${dayAppts.length} записи • ${dayAppts.reduce((s,a)=>s+Number(a.price),0)} ₽</div>
+                        </div>
+                    </div>
+                    <div class="ml-[25px] pl-6 border-l-2 border-dashed ${isToday ? 'border-purple-200' : 'border-gray-100'} space-y-3">
+                        ${dayAppts.length > 0 ? dayAppts.map(app => {
+                            const isDone = app.status === 'completed';
+                            return `
+                            <div onclick="editAppt('${app.id}')" class="bg-white p-3 rounded-2xl shadow-sm border border-gray-50 flex justify-between items-center active:scale-[0.98] transition-all ${isDone ? 'completed-task' : ''}">
+                                <div class="flex items-center gap-3">
+                                    <div class="text-center min-w-[40px]">
+                                        <div class="text-xs font-bold text-gray-800">${app.time}</div>
+                                        <div class="text-[8px] font-bold text-purple-400 uppercase">${isDone ? '✅' : 'Ждем'}</div>
+                                    </div>
+                                    <div class="h-8 w-px bg-gray-100"></div>
+                                    <div>
+                                        <div class="text-sm font-bold text-gray-800 leading-none mb-1">${app.client_name}</div>
+                                        <div class="text-[10px] text-gray-500">${app.service}</div>
+                                    </div>
+                                </div>
+                                <div class="text-[11px] font-bold text-gray-600 bg-gray-50 px-2 py-1 rounded-lg">${app.price} ₽</div>
+                            </div>`}).join('') : '<div class="text-[10px] text-gray-300 italic py-2">Записей нет</div>'}
+                    </div>`;
+                container.appendChild(dayBlock);
+            }
+        }
+
+        function renderClients() {
+            const list = document.getElementById('clients-list');
+            const term = document.getElementById('client-search').value.toLowerCase();
+            list.innerHTML = '';
+            
+            const filtered = store.clients.filter(c => 
+                c.name.toLowerCase().includes(term) || c.phone.includes(term)
+            );
+
+            filtered.forEach(c => {
+                list.innerHTML += `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm flex items-center justify-between border border-gray-50">
+                        <div class="flex items-center gap-3" onclick="editClient('${c.id}')">
+                            <div class="w-11 h-11 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center font-bold text-base shadow-sm">${c.name[0].toUpperCase()}</div>
+                            <div>
+                                <div class="font-bold text-sm text-gray-800">${c.name}</div>
+                                <div class="text-xs text-gray-400 font-medium">${c.phone}</div>
+                            </div>
+                        </div>
+                        <a href="tel:${c.phone.replace(/\D/g,'')}" class="w-10 h-10 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center active:scale-90 transition-all">
+                            <i class="fas fa-phone-alt text-sm"></i>
+                        </a>
+                    </div>`;
+            });
+        }
+        document.getElementById('client-search').addEventListener('input', renderClients);
+
+        // Работа с модалками и Telegram MainButton
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            tg.BackButton.show();
+            tg.BackButton.onClick(() => closeModal(id));
+            
+            tg.MainButton.setText("СОХРАНИТЬ");
+            tg.MainButton.show();
+            tg.MainButton.onClick(() => {
+                const form = id === 'modal-appointment' ? 'form-appointment' : 'form-client';
+                document.getElementById(form).requestSubmit();
+            });
+
+            if (id === 'modal-appointment') populateSelects();
+            tg.HapticFeedback.impactOccurred('medium');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            tg.MainButton.hide();
+            tg.BackButton.hide();
+            tg.MainButton.offClick();
+            editMode = { type: null, id: null };
+            document.getElementById('edit-actions')?.classList.add('hidden');
+            document.getElementById('appt-modal-title').innerText = "Новая запись";
+            document.getElementById('client-modal-title').innerText = "Новый клиент";
+        }
+
+        function populateSelects() {
+            const cSel = document.getElementById('appt-client');
+            const sSel = document.getElementById('appt-service');
+            
+            cSel.innerHTML = '<option value="" disabled selected>Выберите клиента</option>';
+            store.clients.forEach(c => cSel.innerHTML += `<option value="${c.id}" data-name="${c.name}">${c.name}</option>`);
+            
+            sSel.innerHTML = '<option value="" disabled selected>Выберите услугу</option>';
+            const svcs = store.services.length ? store.services : [{name: 'Маникюр', price: 2000}, {name: 'Педикюр', price: 2500}];
+            svcs.forEach(s => sSel.innerHTML += `<option value="${s.name}" data-price="${s.price}">${s.name} (${s.price} ₽)</option>`);
+            
+            document.getElementById('appt-date').value = new Date().toISOString().split('T')[0];
+        }
+
+        // Редактирование
+        function editClient(id) {
+            const c = store.clients.find(item => item.id == id);
+            editMode = { type: 'client', id: id };
+            const f = document.getElementById('form-client');
+            f.name.value = c.name; f.phone.value = c.phone; f.instagram.value = c.instagram;
+            document.getElementById('client-modal-title').innerText = "Редактировать";
+            openModal('modal-client');
+        }
+
+        function editAppt(id) {
+            const a = store.appointments.find(item => item.id == id);
+            editMode = { type: 'appt', id: id };
+            populateSelects();
+            document.getElementById('appt-client').value = a.client_id;
+            document.getElementById('appt-service').value = a.service;
+            document.getElementById('appt-date').value = String(a.date).split('T')[0];
+            document.getElementById('appt-time').value = a.time;
+            
+            document.getElementById('edit-actions').classList.remove('hidden');
+            document.getElementById('appt-modal-title').innerText = "Изменить запись";
+            openModal('modal-appointment');
+        }
+
+        // Сабмиты форм
+        document.getElementById('form-client').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = Object.fromEntries(new FormData(e.target));
+            const action = editMode.id ? 'updateClient' : 'addClient';
+            const res = await sendData(action, { id: editMode.id, ...payload });
+            if(res.status === 'success') closeModal('modal-client');
+        });
+
+        document.getElementById('form-appointment').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const cSel = document.getElementById('appt-client');
+            const sSel = document.getElementById('appt-service');
+            const data = {
+                client_id: cSel.value,
+                client_name: cSel.options[cSel.selectedIndex].dataset.name,
+                service: sSel.value,
+                price: sSel.options[sSel.selectedIndex].dataset.price,
+                date: document.getElementById('appt-date').value,
+                time: document.getElementById('appt-time').value
+            };
+            const action = editMode.id ? 'updateAppointment' : 'addAppointment';
+            const res = await sendData(action, { id: editMode.id, ...data });
+            if(res.status === 'success') closeModal('modal-appointment');
+        });
+
+        async function handleCompleteAppt() {
+            const res = await sendData('completeAppointment', { id: editMode.id });
+            if(res.status === 'success') closeModal('modal-appointment');
+        }
+
+        async function handleDeleteAppt() {
+            if(confirm("Удалить запись?")) {
+                const res = await sendData('deleteAppointment', { id: editMode.id });
+                if(res.status === 'success') closeModal('modal-appointment');
+            }
+        }
+
+        function switchTab(id) {
+            tg.HapticFeedback.impactOccurred('light');
+            document.querySelectorAll('.page').forEach(el => el.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.replace('nav-active', 'text-gray-300'));
+            document.querySelector(`[data-target="${id}"]`).classList.replace('text-gray-300', 'nav-active');
+        }
+
+        function setTodayDateHeader() {
+            const d = new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+            document.getElementById('current-date-header').textContent = d.charAt(0).toUpperCase() + d.slice(1);
+        }
+    </script>
+</body>
+</html>
                 <h1 class="text-2xl font-bold text-gray-900">Главная</h1>
                 <p class="text-xs text-gray-500 capitalize" id="current-date-header">...</p>
             </div>
@@ -374,3 +797,4 @@
     </script>
 </body>
 </html>
+
