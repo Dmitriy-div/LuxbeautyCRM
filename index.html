@@ -3,329 +3,305 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Beauty CRM Ultra</title>
+    <title>CRM Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #F8F9FA; color: #1A1A1A; overflow-x: hidden; }
-        .page { animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .nav-active { color: #7C3AED; position: relative; }
-        .nav-active::after { content: ''; position: absolute; bottom: -10px; width: 4px; height: 4px; background: #7C3AED; border-radius: 50%; }
-        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); }
-        .tab-btn.active { background: #7C3AED; color: white; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #F8F9FA; -webkit-tap-highlight-color: transparent; }
+        .nav-active { color: #7C3AED; }
+        .page { animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .completed { opacity: 0.5; filter: grayscale(1); }
     </style>
 </head>
 <body class="pb-28">
 
     <div id="loader" class="fixed inset-0 bg-white z-[100] flex items-center justify-center">
-        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
     </div>
 
     <div id="page-home" class="page p-5">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold">Главная</h1>
-            <div id="status-online" class="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
-        </div>
-
-        <div class="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-[32px] p-6 text-white shadow-xl shadow-purple-200 mb-8 overflow-hidden relative">
-            <div class="relative z-10">
-                <p class="text-purple-100 text-xs font-semibold uppercase tracking-wider mb-1">Выручка сегодня</p>
-                <h2 id="today-rev" class="text-4xl font-black mb-4">0 ₽</h2>
-                <div class="flex gap-4">
-                    <div class="bg-white/20 px-3 py-1.5 rounded-xl backdrop-blur-md">
-                        <p class="text-[10px] uppercase opacity-80">Записи</p>
-                        <p id="today-cnt" class="font-bold text-sm">0</p>
-                    </div>
-                    <div class="bg-white/20 px-3 py-1.5 rounded-xl backdrop-blur-md">
-                        <p class="text-[10px] uppercase opacity-80">Средний чек</p>
-                        <p id="today-avg" class="font-bold text-sm">0 ₽</p>
-                    </div>
-                </div>
+        <h1 class="text-2xl font-extrabold mb-5">Обзор</h1>
+        <div class="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-[2rem] p-6 text-white shadow-xl mb-8 relative overflow-hidden">
+            <p class="text-purple-100 text-[10px] font-bold uppercase mb-1">Выручка сегодня</p>
+            <h2 id="today-rev" class="text-4xl font-black mb-4">0 ₽</h2>
+            <div class="flex gap-3">
+                <button onclick="openModal('modal-appt')" class="bg-white text-purple-600 px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg">ЗАПИСАТЬ</button>
             </div>
-            <i class="fas fa-crown absolute right-[-10px] bottom-[-10px] text-white/10 text-9xl -rotate-12"></i>
         </div>
+        <h3 class="font-bold text-gray-800 mb-4">Ближайшие записи</h3>
+        <div id="home-upcoming" class="space-y-3"></div>
+    </div>
 
-        <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fas fa-bolt text-yellow-400"></i> Ближайшие сегодня</h3>
-        <div id="home-upcoming" class="space-y-3 mb-8"></div>
+    <div id="page-calendar" class="page p-5 hidden">
+        <h1 class="text-2xl font-extrabold mb-6">График</h1>
+        <div id="vertical-timeline" class="space-y-8"></div>
     </div>
 
     <div id="page-clients" class="page p-5 hidden">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold">Клиенты</h1>
-            <button onclick="openClientModal()" class="w-12 h-12 bg-purple-600 text-white rounded-2xl shadow-lg active:scale-90 transition-all">
-                <i class="fas fa-plus"></i>
-            </button>
+            <h1 class="text-2xl font-extrabold">База</h1>
+            <button onclick="openModal('modal-client')" class="w-12 h-12 bg-gray-900 text-white rounded-2xl flex items-center justify-center shadow-lg"><i class="fas fa-plus"></i></button>
         </div>
-        <div class="bg-white p-4 rounded-2xl flex items-center gap-3 mb-6 shadow-sm border border-gray-100">
+        <div class="bg-white p-4 rounded-2xl flex items-center gap-3 mb-6 shadow-sm">
             <i class="fas fa-search text-gray-300"></i>
-            <input type="text" id="search-input" placeholder="Имя или телефон..." class="w-full outline-none bg-transparent text-sm">
+            <input type="text" id="client-search" placeholder="Поиск..." class="w-full outline-none text-sm bg-transparent">
         </div>
         <div id="clients-list" class="space-y-3"></div>
     </div>
 
     <div id="page-stats" class="page p-5 hidden">
-        <h1 class="text-2xl font-bold mb-6">Аналитика</h1>
-        
+        <h1 class="text-2xl font-extrabold mb-6">Аналитика</h1>
         <div class="grid grid-cols-2 gap-4 mb-6">
-            <div class="bg-white p-5 rounded-[24px] shadow-sm border border-gray-50">
-                <p class="text-gray-400 text-[10px] font-bold uppercase mb-1">Всего доход</p>
-                <p id="stat-total-rev" class="text-xl font-bold text-gray-800">0 ₽</p>
+            <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+                <p class="text-gray-400 text-[9px] font-bold uppercase mb-1">Всего доход</p>
+                <p id="stat-total-rev" class="text-xl font-black text-gray-800">0 ₽</p>
             </div>
-            <div class="bg-white p-5 rounded-[24px] shadow-sm border border-gray-50">
-                <p class="text-gray-400 text-[10px] font-bold uppercase mb-1">Клиентов</p>
-                <p id="stat-total-clients" class="text-xl font-bold text-gray-800">0</p>
+            <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+                <p class="text-gray-400 text-[9px] font-bold uppercase mb-1">Клиенты</p>
+                <p id="stat-total-clients" class="text-xl font-black text-gray-800">0</p>
             </div>
         </div>
-
-        <div class="bg-white p-5 rounded-[24px] shadow-sm border border-gray-50 mb-6">
-            <h4 class="font-bold text-sm mb-4">Популярные услуги</h4>
-            <div id="top-services" class="space-y-3"></div>
-        </div>
-    </div>
-
-    <div id="modal-client-details" class="fixed inset-0 z-[60] hidden">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-md" onclick="closeDetails()"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[40px] p-8 max-h-[90vh] overflow-y-auto">
-            <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-8"></div>
-            
-            <div class="flex items-center gap-5 mb-8">
-                <div id="det-avatar" class="w-20 h-20 bg-purple-100 text-purple-600 rounded-[28px] flex items-center justify-center text-3xl font-bold shadow-inner"></div>
-                <div>
-                    <h2 id="det-name" class="text-2xl font-bold text-gray-900 leading-tight"></h2>
-                    <p id="det-phone" class="text-gray-400 font-medium"></p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-3 mb-8 text-center">
-                <div class="bg-gray-50 p-3 rounded-2xl">
-                    <p class="text-[9px] uppercase font-bold text-gray-400 mb-1">Визиты</p>
-                    <p id="det-visit-count" class="font-bold text-purple-600">0</p>
-                </div>
-                <div class="bg-gray-50 p-3 rounded-2xl">
-                    <p class="text-[9px] uppercase font-bold text-gray-400 mb-1">LTV</p>
-                    <p id="det-total-spent" class="font-bold text-green-600">0 ₽</p>
-                </div>
-                <div class="bg-gray-50 p-3 rounded-2xl">
-                    <p class="text-[9px] uppercase font-bold text-gray-400 mb-1">Ср. чек</p>
-                    <p id="det-avg-bill" class="font-bold text-blue-600">0 ₽</p>
-                </div>
-            </div>
-
-            <div class="flex gap-2 mb-8">
-                <button id="btn-wa" class="flex-1 bg-green-500 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-all"><i class="fab fa-whatsapp"></i> Напомнить</button>
-                <button id="btn-call" class="w-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center active:scale-95 transition-all"><i class="fas fa-phone"></i></button>
-            </div>
-
-            <h4 class="font-bold text-gray-800 mb-4 uppercase text-[10px] tracking-widest">История визитов</h4>
-            <div id="det-history" class="space-y-3 pb-10"></div>
+        <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100">
+            <h4 class="font-bold text-sm mb-4">Топ услуг</h4>
+            <div id="top-services" class="space-y-4"></div>
         </div>
     </div>
 
     <div id="modal-appt" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-appt')"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] p-6 animate-fadeIn">
-            <h2 class="text-xl font-bold mb-6 text-center">Новая запись</h2>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-6 shadow-2xl">
+            <h2 id="appt-title" class="text-xl font-bold mb-6 text-center">Новая запись</h2>
             <form id="form-appt" class="space-y-4">
-                <select id="appt-client" required class="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold border border-gray-100"></select>
-                <select id="appt-service" required class="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold border border-gray-100"></select>
-                
-                <div class="space-y-1">
-                    <label class="text-[10px] font-bold text-gray-400 uppercase ml-4">Цена услуги (можно изменить)</label>
-                    <input type="number" id="appt-price" placeholder="Цена" required class="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold border border-gray-100 text-purple-600">
-                </div>
-
+                <select id="appt-client" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold border-none outline-none"></select>
+                <select id="appt-service" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold border-none outline-none"></select>
+                <input type="number" id="appt-price" placeholder="Цена" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold border-none outline-none text-purple-600">
                 <div class="flex gap-3">
-                    <input type="date" id="appt-date" required class="w-1/2 bg-gray-50 p-4 rounded-2xl outline-none text-sm border border-gray-100 font-bold">
-                    <input type="time" id="appt-time" required class="w-1/2 bg-gray-50 p-4 rounded-2xl outline-none text-sm border border-gray-100 font-bold">
+                    <input type="date" id="appt-date" required class="w-1/2 bg-gray-50 p-4 rounded-2xl font-bold border-none outline-none text-sm">
+                    <input type="time" id="appt-time" required class="w-1/2 bg-gray-50 p-4 rounded-2xl font-bold border-none outline-none text-sm">
+                </div>
+                <div id="appt-edit-actions" class="hidden grid grid-cols-2 gap-3 pt-2">
+                    <button type="button" onclick="handleStatus('completeAppointment')" class="bg-green-100 text-green-700 py-4 rounded-2xl font-bold">Готово</button>
+                    <button type="button" onclick="handleStatus('deleteAppointment')" class="bg-red-100 text-red-600 py-4 rounded-2xl font-bold">Удалить</button>
                 </div>
                 <div class="h-10"></div>
             </form>
         </div>
     </div>
 
-    <div class="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-xl border-t border-gray-100 pt-4 pb-8 px-6 flex justify-between items-center z-40">
-        <button onclick="switchTab('page-home')" class="nav-btn nav-active flex flex-col items-center gap-1 w-1/4" data-target="page-home">
-            <i class="fas fa-grid-2 text-xl"></i><span class="text-[9px] font-bold uppercase">Обзор</span>
-        </button>
-        <button onclick="switchTab('page-clients')" class="nav-btn text-gray-300 flex flex-col items-center gap-1 w-1/4" data-target="page-clients">
-            <i class="fas fa-users text-xl"></i><span class="text-[9px] font-bold uppercase">Клиенты</span>
-        </button>
-        <button onclick="switchTab('page-stats')" class="nav-btn text-gray-300 flex flex-col items-center gap-1 w-1/4" data-target="page-stats">
-            <i class="fas fa-chart-pie text-xl"></i><span class="text-[9px] font-bold uppercase">Отчеты</span>
-        </button>
+    <div id="modal-client" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-client')"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-6 shadow-2xl">
+            <h2 class="text-xl font-bold mb-6 text-center">Новый клиент</h2>
+            <form id="form-client" class="space-y-4">
+                <input type="text" id="c-name" placeholder="Имя Фамилия" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold border-none outline-none">
+                <input type="tel" id="c-phone" placeholder="Телефон" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold border-none outline-none">
+                <input type="text" id="c-inst" placeholder="Instagram" class="w-full bg-gray-50 p-4 rounded-2xl font-bold border-none outline-none">
+                <div class="h-10"></div>
+            </form>
+        </div>
     </div>
 
+    <div id="modal-details" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-md" onclick="closeDetails()"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-8 max-h-[85vh] overflow-y-auto">
+            <div id="det-name" class="text-2xl font-black mb-1"></div>
+            <div id="det-phone" class="text-gray-400 font-bold mb-6"></div>
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="bg-purple-50 p-4 rounded-2xl">
+                    <p class="text-[9px] uppercase font-bold text-purple-400">Визиты</p>
+                    <p id="det-visits" class="text-xl font-bold text-purple-700">0</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-2xl text-green-700">
+                    <p class="text-[9px] uppercase font-bold text-green-400">Доход</p>
+                    <p id="det-ltv" class="text-xl font-bold">0 ₽</p>
+                </div>
+            </div>
+            <button id="btn-wa" class="w-full bg-green-500 text-white py-4 rounded-2xl font-bold mb-6"><i class="fab fa-whatsapp mr-2"></i>Напомнить в WhatsApp</button>
+            <h4 class="text-[10px] font-bold uppercase text-gray-400 mb-4 tracking-widest">История</h4>
+            <div id="det-history" class="space-y-3"></div>
+        </div>
+    </div>
+
+    <nav class="fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-xl border-t border-gray-100 flex justify-around py-4 pb-8 z-40">
+        <button onclick="switchTab('page-home')" class="nav-btn nav-active flex flex-col items-center gap-1 w-1/4" data-target="page-home">
+            <i class="fas fa-compass text-xl"></i><span class="text-[9px] font-bold uppercase">Обзор</span>
+        </button>
+        <button onclick="switchTab('page-calendar')" class="nav-btn text-gray-300 flex flex-col items-center gap-1 w-1/4" data-target="page-calendar">
+            <i class="fas fa-calendar-alt text-xl"></i><span class="text-[9px] font-bold uppercase">График</span>
+        </button>
+        <button onclick="switchTab('page-clients')" class="nav-btn text-gray-300 flex flex-col items-center gap-1 w-1/4" data-target="page-clients">
+            <i class="fas fa-user-group text-xl"></i><span class="text-[9px] font-bold uppercase">База</span>
+        </button>
+        <button onclick="switchTab('page-stats')" class="nav-btn text-gray-300 flex flex-col items-center gap-1 w-1/4" data-target="page-stats">
+            <i class="fas fa-chart-bar text-xl"></i><span class="text-[9px] font-bold uppercase">Отчеты</span>
+        </button>
+    </nav>
+
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbxo-zTKvZ6xqS6XxDtYg1que_hjyozgS5zAvIJ5Vd0SwJUNFZcqI82qJp5lqNp6TbqQtA/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycby03kbE8SW93C5Z9JZTKD2qsOiubTu-NgTHgxED87B6Kozuz-ZohYPAAOH4uPM7Z2l5Nw/exec";
         const tg = window.Telegram.WebApp;
-        tg.expand();
-
         let store = { clients: [], appointments: [], services: [] };
+        let currentEditId = null;
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            await loadData();
-            document.getElementById('loader').classList.add('hidden');
-        });
+        document.addEventListener('DOMContentLoaded', () => { loadData(); tg.expand(); });
 
         async function loadData() {
-            try {
-                const res = await fetch(`${API_URL}?action=getData`);
-                store = (await res.json());
-                refreshUI();
-            } catch (e) { alert("Ошибка сети"); }
+            const res = await fetch(`${API_URL}?action=getData`);
+            store = await res.json();
+            document.getElementById('loader').classList.add('hidden');
+            refreshUI();
+        }
+
+        async function sendData(action, payload) {
+            tg.MainButton.showProgress();
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...payload }) });
+            await loadData();
+            tg.MainButton.hideProgress();
+            return await res.json();
         }
 
         function refreshUI() {
             renderDashboard();
-            renderClientsList();
-            renderAnalytics();
-            populateAppointmentForm();
+            renderCalendar();
+            renderClients();
+            renderStats();
+            populateSelects();
         }
 
-        // --- 1. ЦЕНА С ВОЗМОЖНОСТЬЮ ИЗМЕНЕНИЯ ---
-        function populateAppointmentForm() {
-            const sSel = document.getElementById('appt-service');
-            const cSel = document.getElementById('appt-client');
-            const pInput = document.getElementById('appt-price');
-
-            sSel.innerHTML = '<option value="" disabled selected>Услуга</option>';
-            store.services.forEach(s => sSel.innerHTML += `<option value="${s.name}" data-price="${s.price}">${s.name}</option>`);
-
-            cSel.innerHTML = '<option value="" disabled selected>Клиент</option>';
-            store.clients.forEach(c => cSel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
-
-            sSel.onchange = () => {
-                const price = sSel.options[sSel.selectedIndex].dataset.price;
-                pInput.value = price;
-            };
-        }
-
-        // --- 3. КАРТОЧКА КЛИЕНТА И ИСТОРИЯ ---
-        function showClientDetails(clientId) {
-            const client = store.clients.find(c => c.id == clientId);
-            const history = store.appointments.filter(a => a.client_id == clientId).sort((a,b) => b.date.localeCompare(a.date));
-            
-            const totalSpent = history.reduce((s, a) => s + Number(a.price), 0);
-
-            document.getElementById('det-name').innerText = client.name;
-            document.getElementById('det-phone').innerText = client.phone;
-            document.getElementById('det-avatar').innerText = client.name[0];
-            document.getElementById('det-visit-count').innerText = history.length;
-            document.getElementById('det-total-spent').innerText = `${totalSpent.toLocaleString()} ₽`;
-            document.getElementById('det-avg-bill').innerText = history.length ? `${Math.round(totalSpent/history.length)} ₽` : '0 ₽';
-
-            // --- 4. БЫСТРЫЕ НАПОМИНАНИЯ ---
-            document.getElementById('btn-wa').onclick = () => {
-                const nextAppt = history.find(a => new Date(a.date) >= new Date());
-                let msg = `Здравствуйте, ${client.name}! Напоминаю о нашей встрече.`;
-                if(nextAppt) msg = `Привет! Напоминаю о записи: ${nextAppt.date} в ${nextAppt.time}. Жду тебя!`;
-                window.open(`https://wa.me/${client.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`);
-            };
-
-            const historyCont = document.getElementById('det-history');
-            historyCont.innerHTML = history.length ? '' : '<p class="text-center text-gray-300 text-xs py-5">Истории пока нет</p>';
-            history.forEach(a => {
-                historyCont.innerHTML += `
-                    <div class="bg-gray-50 p-4 rounded-2xl flex justify-between items-center border border-gray-100">
-                        <div>
-                            <p class="text-[10px] font-bold text-gray-400 uppercase">${a.date}</p>
-                            <p class="text-sm font-bold text-gray-800">${a.service}</p>
+        function renderCalendar() {
+            const cont = document.getElementById('vertical-timeline');
+            cont.innerHTML = '';
+            const today = new Date();
+            for (let i = 0; i < 14; i++) {
+                const d = new Date(); d.setDate(today.getDate() + i);
+                const ds = d.toISOString().split('T')[0];
+                const dayAppts = store.appointments.filter(a => a.date == ds).sort((a,b) => a.time.localeCompare(b.time));
+                
+                cont.innerHTML += `
+                    <div class="mb-4">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-12 h-12 ${i==0?'bg-purple-600 text-white shadow-lg':'bg-white text-gray-400'} rounded-2xl flex flex-col items-center justify-center font-bold">
+                                <span class="text-[10px]">${d.toLocaleDateString('ru',{weekday:'short'})}</span>
+                                <span>${d.getDate()}</span>
+                            </div>
+                            <div class="font-bold text-sm text-gray-800">${i==0?'Сегодня':d.toLocaleDateString('ru',{day:'numeric',month:'long'})}</div>
                         </div>
-                        <p class="font-bold text-sm">${a.price} ₽</p>
+                        <div class="ml-6 pl-6 border-l-2 border-dashed border-gray-100 space-y-3">
+                            ${dayAppts.map(a => `
+                                <div onclick="openEditAppt('${a.id}')" class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center ${a.status=='completed'?'completed':''}">
+                                    <div><p class="text-xs font-black text-purple-600">${a.time}</p><p class="font-bold text-sm">${a.client_name}</p></div>
+                                    <div class="text-xs font-bold text-gray-400">${a.price} ₽</div>
+                                </div>
+                            `).join('') || '<p class="text-[10px] text-gray-300 italic">Нет записей</p>'}
+                        </div>
                     </div>`;
-            });
-
-            document.getElementById('modal-client-details').classList.remove('hidden');
-            tg.BackButton.show();
-            tg.BackButton.onClick(closeDetails);
+            }
         }
 
-        function closeDetails() {
-            document.getElementById('modal-client-details').classList.add('hidden');
-            tg.BackButton.hide();
+        function renderClients() {
+            const term = document.getElementById('client-search').value.toLowerCase();
+            const cont = document.getElementById('clients-list');
+            cont.innerHTML = store.clients.filter(c => c.name.toLowerCase().includes(term)).map(c => `
+                <div onclick="showDetails('${c.id}')" class="bg-white p-4 rounded-2xl flex items-center justify-between active:scale-95 transition-all">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center font-bold">${c.name[0]}</div>
+                        <div><p class="font-bold text-sm">${c.name}</p><p class="text-[10px] text-gray-400">${c.phone}</p></div>
+                    </div>
+                    <i class="fas fa-chevron-right text-gray-200"></i>
+                </div>
+            `).join('');
         }
+        document.getElementById('client-search').oninput = renderClients;
 
-        // --- 5. АНАЛИТИКА ---
-        function renderAnalytics() {
-            const totalRev = store.appointments.reduce((s, a) => s + Number(a.price), 0);
-            document.getElementById('stat-total-rev').innerText = `${totalRev.toLocaleString()} ₽`;
-            document.getElementById('stat-total-clients').innerText = store.clients.length;
-
-            const serviceStats = {};
-            store.appointments.forEach(a => {
-                serviceStats[a.service] = (serviceStats[a.service] || 0) + 1;
-            });
-
-            const topCont = document.getElementById('top-services');
-            topCont.innerHTML = '';
-            Object.entries(serviceStats).sort((a,b) => b[1] - a[1]).slice(0, 5).forEach(([name, count]) => {
-                topCont.innerHTML += `
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm text-gray-600">${name}</span>
-                        <span class="text-sm font-bold">${count} раз</span>
-                    </div>`;
-            });
+        function showDetails(id) {
+            const c = store.clients.find(c => c.id == id);
+            const history = store.appointments.filter(a => a.client_id == id);
+            document.getElementById('det-name').innerText = c.name;
+            document.getElementById('det-phone').innerText = c.phone;
+            document.getElementById('det-visits').innerText = history.length;
+            document.getElementById('det-ltv').innerText = history.reduce((s,a)=>s+Number(a.price),0) + ' ₽';
+            document.getElementById('det-history').innerHTML = history.map(a => `<div class="bg-gray-50 p-3 rounded-xl flex justify-between text-xs font-bold"><span>${a.date}</span><span>${a.price} ₽</span></div>`).join('');
+            document.getElementById('btn-wa').onclick = () => window.open(`https://wa.me/${c.phone.replace(/\D/g,'')}?text=Привет! Жду тебя на запись.`);
+            document.getElementById('modal-details').classList.remove('hidden');
         }
 
         function renderDashboard() {
             const today = new Date().toISOString().split('T')[0];
             const appts = store.appointments.filter(a => a.date == today);
-            const rev = appts.reduce((s, a) => s + Number(a.price), 0);
+            document.getElementById('today-rev').innerText = appts.reduce((s,a)=>s+Number(a.price),0).toLocaleString() + ' ₽';
+            document.getElementById('home-upcoming').innerHTML = appts.slice(0,3).map(a => `<div class="bg-white p-4 rounded-2xl shadow-sm flex items-center gap-4"><div class="font-black text-purple-600">${a.time}</div><div><p class="font-bold text-sm">${a.client_name}</p><p class="text-[10px] text-gray-400 font-bold uppercase">${a.service}</p></div></div>`).join('');
+        }
 
-            document.getElementById('today-rev').innerText = `${rev.toLocaleString()} ₽`;
-            document.getElementById('today-cnt').innerText = appts.length;
-            document.getElementById('today-avg').innerText = appts.length ? `${Math.round(rev/appts.length)} ₽` : '0 ₽';
+        function renderStats() {
+            const total = store.appointments.reduce((s,a)=>s+Number(a.price),0);
+            document.getElementById('stat-total-rev').innerText = total.toLocaleString() + ' ₽';
+            document.getElementById('stat-total-clients').innerText = store.clients.length;
+        }
 
-            const homeCont = document.getElementById('home-upcoming');
-            homeCont.innerHTML = appts.length ? '' : '<p class="text-center text-gray-400 py-10 text-sm">На сегодня записей нет</p>';
-            appts.sort((a,b) => a.time.localeCompare(b.time)).forEach(a => {
-                homeCont.innerHTML += `
-                    <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center border border-gray-50 active:scale-95 transition-all">
-                        <div class="flex gap-4 items-center">
-                            <div class="text-lg font-black text-purple-600">${a.time}</div>
-                            <div>
-                                <p class="font-bold text-sm leading-none mb-1">${a.client_name}</p>
-                                <p class="text-[10px] text-gray-400 font-bold uppercase">${a.service}</p>
-                            </div>
-                        </div>
-                        <div class="text-sm font-bold text-gray-800">${a.price} ₽</div>
-                    </div>`;
+        function populateSelects() {
+            const cS = document.getElementById('appt-client');
+            const sS = document.getElementById('appt-service');
+            cS.innerHTML = '<option value="" disabled selected>Клиент</option>' + store.clients.map(c => `<option value="${c.id}" data-name="${c.name}">${c.name}</option>`).join('');
+            sS.innerHTML = '<option value="" disabled selected>Услуга</option>' + store.services.map(s => `<option value="${s.name}" data-price="${s.price}">${s.name}</option>`).join('');
+            sS.onchange = () => document.getElementById('appt-price').value = sS.options[sS.selectedIndex].dataset.price;
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            tg.MainButton.setText("СОХРАНИТЬ");
+            tg.MainButton.show();
+            tg.MainButton.onClick(() => {
+                if (id === 'modal-appt') document.getElementById('form-appt').requestSubmit();
+                if (id === 'modal-client') document.getElementById('form-client').requestSubmit();
             });
         }
 
-        function renderClientsList() {
-            const cont = document.getElementById('clients-list');
-            cont.innerHTML = '';
-            store.clients.sort((a,b) => a.name.localeCompare(b.name)).forEach(c => {
-                cont.innerHTML += `
-                    <div onclick="showClientDetails('${c.id}')" class="bg-white p-4 rounded-2xl flex items-center justify-between border border-gray-50 active:scale-[0.98] transition-all">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-purple-50 text-purple-500 rounded-xl flex items-center justify-center font-bold">${c.name[0]}</div>
-                            <div>
-                                <p class="font-bold text-sm">${c.name}</p>
-                                <p class="text-[11px] text-gray-400 font-medium">${c.phone}</p>
-                            </div>
-                        </div>
-                        <i class="fas fa-chevron-right text-gray-200 text-xs"></i>
-                    </div>`;
-            });
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            tg.MainButton.hide();
+            tg.MainButton.offClick();
+            currentEditId = null;
         }
+
+        function closeDetails() { document.getElementById('modal-details').classList.add('hidden'); }
+
+        function openEditAppt(id) {
+            const a = store.appointments.find(i => i.id == id);
+            currentEditId = id;
+            document.getElementById('appt-client').value = a.client_id;
+            document.getElementById('appt-service').value = a.service;
+            document.getElementById('appt-price').value = a.price;
+            document.getElementById('appt-date').value = a.date;
+            document.getElementById('appt-time').value = a.time;
+            document.getElementById('appt-edit-actions').classList.remove('hidden');
+            openModal('modal-appt');
+        }
+
+        document.getElementById('form-appt').onsubmit = async (e) => {
+            e.preventDefault();
+            const c = document.getElementById('appt-client');
+            const data = { id: currentEditId, client_id: c.value, client_name: c.options[c.selectedIndex].dataset.name, service: document.getElementById('appt-service').value, price: document.getElementById('appt-price').value, date: document.getElementById('appt-date').value, time: document.getElementById('appt-time').value };
+            if(await sendData(currentEditId?'updateAppointment':'addAppointment', data)) closeModal('modal-appt');
+        };
+
+        document.getElementById('form-client').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = { name: document.getElementById('c-name').value, phone: document.getElementById('c-phone').value, instagram: document.getElementById('c-inst').value };
+            if(await sendData('addClient', data)) closeModal('modal-client');
+        };
+
+        async function handleStatus(act) { if(await sendData(act, {id:currentEditId})) closeModal('modal-appt'); }
 
         function switchTab(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('nav-active'));
-            document.querySelector(`[data-target="${id}"]`).classList.add('nav-active');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.replace('nav-active', 'text-gray-300'));
+            document.querySelector(`[data-target="${id}"]`).classList.replace('text-gray-300', 'nav-active');
             tg.HapticFeedback.impactOccurred('light');
-        }
-
-        function openClientModal() {
-            // Реализуй модалку добавления клиента по аналогии с прошлой версией
         }
     </script>
 </body>
 </html>
-
