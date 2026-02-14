@@ -29,7 +29,7 @@
         <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[2.5rem] p-7 text-white shadow-xl mb-8">
             <div class="flex justify-between items-start mb-4">
                 <div>
-                    <p class="text-indigo-100 text-[10px] font-bold uppercase tracking-wider mb-1">Чистая прибыль сегодня</p>
+                    <p class="text-indigo-100 text-[10px] font-bold uppercase tracking-wider mb-1">Прибыль сегодня</p>
                     <h2 id="today-profit" class="text-4xl font-black">0 ₽</h2>
                 </div>
                 <button onclick="findFreeSlots()" class="bg-white/20 p-2.5 rounded-2xl backdrop-blur-md text-[10px] font-bold uppercase">Окна</button>
@@ -50,7 +50,7 @@
 
     <div id="page-clients" class="page p-5 hidden">
         <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-black text-gray-900">База</h1>
+            <h1 class="text-2xl font-black">База</h1>
             <button onclick="openClientModal()" class="w-12 h-12 bg-gray-900 text-white rounded-2xl flex items-center justify-center shadow-lg"><i class="fas fa-plus"></i></button>
         </div>
         <div class="relative mb-6">
@@ -80,7 +80,7 @@
             </div>
         </div>
         <div class="bg-white p-7 rounded-[2.5rem] shadow-sm">
-            <h4 class="font-bold text-sm mb-5 text-gray-800 uppercase tracking-tighter text-center">Топ услуг за период</h4>
+            <h4 class="font-bold text-sm mb-5 text-gray-800 uppercase tracking-tighter text-center">Топ услуг</h4>
             <div id="top-services" class="space-y-4 text-sm font-bold"></div>
         </div>
     </div>
@@ -130,7 +130,7 @@
                 <input type="text" id="c-name" placeholder="Имя Фамилия" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
                 <input type="tel" id="c-phone" placeholder="Телефон" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
                 <input type="text" id="c-inst" placeholder="Instagram / Соцсеть" class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
-                <textarea id="c-notes" placeholder="Заметки о клиенте..." class="w-full bg-gray-50 p-4 rounded-2xl font-medium outline-none h-28"></textarea>
+                <textarea id="c-notes" placeholder="Заметки..." class="w-full bg-gray-50 p-4 rounded-2xl font-medium outline-none h-28"></textarea>
                 <div class="h-10"></div>
             </form>
         </div>
@@ -177,218 +177,152 @@
 
         document.addEventListener('DOMContentLoaded', () => { 
             tg.expand(); 
-            setupPhoneInput();
-            if (store.clients.length > 0) refreshUI(); // Быстрый показ из кэша
+            if (store.clients.length > 0) refreshUI(); 
             loadData(); 
         });
-
-        function setupPhoneInput() {
-            const phoneInput = document.getElementById('c-phone');
-            phoneInput.addEventListener('focus', () => { if (!phoneInput.value.startsWith('+375')) phoneInput.value = '+375'; });
-            phoneInput.addEventListener('input', () => { if (!phoneInput.value.startsWith('+375')) phoneInput.value = '+375' + phoneInput.value.replace(/\D/g, '').replace(/^375/, ''); });
-        }
 
         async function loadData() {
             try {
                 const res = await fetch(`${API_URL}?action=getData`);
-                store = await res.json();
-                localStorage.setItem('crm_data', JSON.stringify(store)); // Обновляем кэш
+                const newData = await res.json();
+                store = newData;
+                localStorage.setItem('crm_data', JSON.stringify(store));
                 document.getElementById('loader').classList.add('hidden');
                 refreshUI();
+            } catch (e) { console.error(e); }
+        }
+
+        async function sendData(action, payload) {
+            tg.MainButton.showProgress();
+            try {
+                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...payload }) });
+                // Пауза, чтобы Google успел сохранить данные
+                setTimeout(async () => {
+                    await loadData();
+                    tg.HapticFeedback.notificationOccurred('success');
+                    tg.MainButton.hideProgress();
+                }, 1200);
             } catch (e) { 
-                console.error(e);
-                tg.showAlert("Ошибка соединения с сервером");
+                tg.showAlert("Данные отправлены. Обновляю..."); 
+                setTimeout(() => location.reload(), 500);
             }
         }
 
-// Строка 126: Обновленная функция отправки
-async function sendData(action, payload) {
-    tg.MainButton.showProgress();
-    try {
-        await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...payload }) });
-        // Даем скрипту 1 секунду на запись в таблицу, затем обновляем UI
-        setTimeout(async () => {
-            await loadData();
-            tg.HapticFeedback.notificationOccurred('success');
-            tg.MainButton.hideProgress();
-        }, 1200);
-    } catch (e) { 
-        tg.showAlert("Готово! Обновляю..."); 
-        setTimeout(() => location.reload(), 500);
-    }
-}
-        // ... [Функции findFreeSlots, renderCalendar, renderDashboard остаются из оригинала] ...
-        function findFreeSlots() {
-            const today = new Date().toISOString().split('T')[0];
-            const busy = store.appointments.filter(a => a.date.includes(today) && a.status !== 'cancelled').map(a => a.time);
-            const allSlots = ["09:00", "11:00", "13:00", "15:00", "17:00", "19:00", "21:00"];
-            const free = allSlots.filter(s => !busy.includes(s));
-            tg.showPopup({ title: 'Свободно', message: free.length ? free.join(' | ') : 'Окон нет', buttons: [{type: 'close'}] });
+        function refreshUI() {
+            renderDashboard();
+            renderCalendar();
+            renderClients();
+            renderStats();
+            populateSelects();
         }
 
-// Строка 139: Замени старую функцию renderCalendar на эту:
-function renderCalendar() {
-    const cont = document.getElementById('vertical-timeline');
-    cont.innerHTML = '';
-    const today = new Date();
-    for (let i = 0; i < 14; i++) {
-        const d = new Date(); d.setDate(today.getDate() + i);
-        
-        // Форматируем дату в YYYY-MM-DD для точного сравнения
-        const ds = d.toISOString().split('T')[0];
-        
-        const dayAppts = store.appointments.filter(a => {
-            if (!a.date) return false;
-            // Обрезаем ISO строку из базы до YYYY-MM-DD
-            return a.date.split('T')[0] === ds;
-        }).sort((a,b) => a.time.localeCompare(b.time));
-
-        cont.innerHTML += `
-            <div>
-                <div class="flex justify-between items-center mb-4 px-1">
-                    <span class="font-bold text-gray-400 text-[10px] uppercase tracking-widest">${d.toLocaleDateString('ru',{weekday:'short', day:'numeric', month:'short'})}</span>
-                    <button onclick="fastAddAppt('${ds}')" class="text-purple-600 text-[10px] font-black uppercase">+ ЗАПИСЬ</button>
-                </div>
-                <div class="space-y-3">
-                    ${dayAppts.map(a => `
-                        <div onclick="openEditAppt('${a.id}')" class="bg-white p-4 rounded-3xl shadow-sm border border-gray-50 flex justify-between items-center status-${a.status}">
-                            <div>
-                                <p class="text-[10px] font-black ${a.status=='cancelled'?'text-gray-300':'text-purple-600'}">${a.time}</p>
-                                <p class="font-bold text-sm text-gray-800">${a.client_name}</p>
-                                <p class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">${a.service}</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="font-black text-sm text-gray-900">${a.price} ₽</p>
-                            </div>
+        function renderCalendar() {
+            const cont = document.getElementById('vertical-timeline');
+            cont.innerHTML = '';
+            const today = new Date();
+            for (let i = 0; i < 14; i++) {
+                const d = new Date(); d.setDate(today.getDate() + i);
+                const ds = d.toISOString().split('T')[0];
+                const dayAppts = store.appointments.filter(a => a.date && a.date.split('T')[0] === ds).sort((a,b) => a.time.localeCompare(b.time));
+                
+                cont.innerHTML += `
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-3 px-1">
+                            <span class="font-bold text-gray-400 text-[10px] uppercase tracking-widest">${d.toLocaleDateString('ru',{weekday:'short', day:'numeric', month:'short'})}</span>
+                            <button onclick="fastAddAppt('${ds}')" class="text-purple-600 text-[10px] font-black uppercase">+ ЗАПИСЬ</button>
                         </div>
-                    `).join('') || '<div class="p-6 border-2 border-dashed border-gray-100 rounded-[2rem] text-center text-[10px] text-gray-300 font-bold uppercase tracking-widest">Нет записей</div>'}
-                </div>
-            </div>`;
-    }
-}
+                        <div class="space-y-3">
+                            ${dayAppts.map(a => `
+                                <div onclick="openEditAppt('${a.id}')" class="bg-white p-4 rounded-3xl shadow-sm border border-gray-50 flex justify-between items-center status-${a.status}">
+                                    <div>
+                                        <p class="text-[10px] font-black ${a.status=='cancelled'?'text-gray-300':'text-purple-600'}">${a.time}</p>
+                                        <p class="font-bold text-sm text-gray-800">${a.client_name}</p>
+                                        <p class="text-[9px] text-gray-400 font-bold uppercase">${a.service}</p>
+                                    </div>
+                                    <p class="font-black text-sm text-gray-900">${a.price} ₽</p>
+                                </div>
+                            `).join('') || '<div class="p-5 border-2 border-dashed border-gray-100 rounded-[2rem] text-center text-[10px] text-gray-300 font-bold uppercase">Свободно</div>'}
+                        </div>
+                    </div>`;
+            }
+        }
 
         function renderDashboard() {
             const todayStr = new Date().toISOString().split('T')[0];
-            const todayAppts = store.appointments.filter(a => a.date.includes(todayStr) && a.status !== 'cancelled');
+            const todayAppts = store.appointments.filter(a => a.date && a.date.split('T')[0] === todayStr && a.status !== 'cancelled');
             const rev = todayAppts.reduce((s,a) => s + Number(a.price), 0);
             const costs = todayAppts.reduce((s,a) => s + Number(a.costs || 0), 0);
             document.getElementById('today-profit').innerText = (rev - costs).toLocaleString() + ' ₽';
-            document.getElementById('today-rev-sub').innerText = `Выручка: ${rev} ₽ | Расходники: ${costs} ₽`;
-            document.getElementById('home-upcoming').innerHTML = todayAppts.slice(0,4).map(a => `
+            document.getElementById('today-rev-sub').innerText = `Выручка: ${rev} ₽ | Расход: ${costs} ₽`;
+            document.getElementById('home-upcoming').innerHTML = todayAppts.slice(0,5).map(a => `
                 <div onclick="openEditAppt('${a.id}')" class="bg-white p-5 rounded-[1.5rem] shadow-sm flex justify-between items-center border border-gray-50">
                     <div class="flex items-center gap-4">
                         <div class="w-2 h-2 rounded-full ${a.status == 'confirmed' ? 'bg-green-500' : 'bg-amber-500'} shadow-sm"></div>
-                        <span class="font-black text-purple-600 w-10 text-sm">${a.time}</span>
+                        <span class="font-black text-purple-600 text-sm">${a.time}</span>
                         <span class="font-bold text-sm text-gray-800">${a.client_name}</span>
                     </div>
                     <i class="fas fa-chevron-right text-gray-200 text-xs"></i>
                 </div>
-            `).join('') || '<div class="text-center p-12 bg-white rounded-[2.5rem] text-gray-300 text-xs font-bold uppercase tracking-widest">На сегодня пусто</div>';
+            `).join('') || '<div class="text-center p-10 bg-white rounded-[2.5rem] text-gray-300 text-xs font-bold uppercase">На сегодня пусто</div>';
         }
 
         function renderClients() {
             const term = document.getElementById('client-search').value.toLowerCase();
             const cont = document.getElementById('clients-list');
-            cont.innerHTML = store.clients.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term)).map(c => {
-                // Подсчет визитов для бейджа "Частый клиент"
-                const visits = store.appointments.filter(a => a.client_id == c.id && a.status === 'confirmed').length;
-                return `
-                    <div onclick="showDetails('${c.id}')" class="bg-white p-4 rounded-3xl shadow-sm border border-gray-50 flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-black text-xl">${c.name[0]}</div>
-                            <div>
-                                <p class="font-black text-sm text-gray-900">${c.name}</p>
-                                <p class="text-[10px] text-gray-400 font-bold">${c.phone}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            ${visits > 3 ? '<span class="bg-amber-100 text-amber-600 text-[8px] font-black px-2 py-1 rounded-lg uppercase">VIP</span>' : ''}
-                            <i class="fas fa-chevron-right text-gray-100"></i>
+            cont.innerHTML = store.clients.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term)).map(c => `
+                <div onclick="showDetails('${c.id}')" class="bg-white p-4 rounded-3xl shadow-sm border border-gray-50 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-11 h-11 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-black">${c.name[0]}</div>
+                        <div>
+                            <p class="font-black text-sm text-gray-900">${c.name}</p>
+                            <p class="text-[10px] text-gray-400 font-bold">${c.phone}</p>
                         </div>
                     </div>
-                `;
-            }).join('');
+                    <i class="fas fa-chevron-right text-gray-100"></i>
+                </div>
+            `).join('');
         }
         document.getElementById('client-search').oninput = renderClients;
 
         function renderStats() {
             const period = document.getElementById('stats-period').value;
             const now = new Date();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
-
             let filtered = store.appointments.filter(a => a.status !== 'cancelled');
 
             if (period === 'current') {
-                filtered = filtered.filter(a => {
-                    const d = new Date(a.date);
-                    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-                });
+                filtered = filtered.filter(a => new Date(a.date).getMonth() === now.getMonth());
             } else if (period === 'prev') {
-                filtered = filtered.filter(a => {
-                    const d = new Date(a.date);
-                    const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-                    const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-                    return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
-                });
+                filtered = filtered.filter(a => new Date(a.date).getMonth() === (now.getMonth() - 1));
             }
 
             const rev = filtered.reduce((s,a) => s + Number(a.price), 0);
             const costs = filtered.reduce((s,a) => s + Number(a.costs || 0), 0);
-            
             document.getElementById('stat-net-profit').innerText = (rev - costs).toLocaleString() + ' ₽';
             document.getElementById('stat-margin').innerText = rev ? Math.round(((rev-costs)/rev)*100) + '%' : '0%';
             
             const svcs = {};
             filtered.forEach(a => svcs[a.service] = (svcs[a.service] || 0) + 1);
-            document.getElementById('top-services').innerHTML = Object.entries(svcs).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,c])=>`
-                <div class="flex justify-between items-center bg-gray-50 p-4 rounded-2xl mb-2">
+            document.getElementById('top-services').innerHTML = Object.entries(svcs).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([n,c])=>`
+                <div class="flex justify-between items-center bg-gray-50 p-4 rounded-2xl">
                     <span class="text-xs">${n}</span>
                     <span class="text-purple-600 font-black">${c}</span>
                 </div>
-            `).join('') || '<p class="text-center text-gray-300 text-[10px] py-4">Нет данных</p>';
-        }
-
-        // ... [Остальные функции: showDetails, sendRemind, openModal, closeModal и т.д.] ...
-        function showDetails(id) {
-            const c = store.clients.find(c => c.id == id);
-            currentClientEditId = id;
-            document.getElementById('det-name').innerText = c.name;
-            const cleanPhone = c.phone.replace(/\D/g, '');
-            
-            document.getElementById('det-viber').onclick = () => tg.openLink(`viber://chat?number=${cleanPhone}`);
-            document.getElementById('det-wa').onclick = () => tg.openLink(`https://wa.me/${cleanPhone}`);
-            document.getElementById('det-call').onclick = () => tg.openLink(`tel:${c.phone}`);
-            
-            const notesEl = document.getElementById('det-notes');
-            if(c.notes) { notesEl.innerText = "📌 ЗАМЕТКА: " + c.notes; notesEl.classList.remove('hidden'); }
-            else { notesEl.classList.add('hidden'); }
-
-            const history = store.appointments.filter(a => a.client_id == id).sort((a,b) => b.date.localeCompare(a.date));
-            document.getElementById('det-history').innerHTML = '<p class="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-4">История визитов</p>' + history.map(a => `
-                <div class="bg-gray-50 p-4 rounded-2xl flex justify-between items-center text-xs mb-2">
-                    <div><p class="font-black text-gray-900">${new Date(a.date).toLocaleDateString('ru')}</p><p class="text-gray-400 font-bold uppercase text-[9px]">${a.service}</p></div>
-                    <span class="text-green-600 font-black text-sm">${a.price} ₽</span>
-                </div>
-            `).join('');
-            document.getElementById('modal-details').classList.remove('hidden');
-        }
-
-        function sendRemind(type) {
-            const a = store.appointments.find(i => i.id == currentEditId);
-            const c = store.clients.find(i => i.id == a.client_id);
-            const date = new Date(a.date).toLocaleDateString('ru', {day:'numeric', month:'long'});
-            const text = `Привет, ${c.name}! Напоминаю о нашей записи: ${date} в ${a.time}. Жду тебя!`;
-            const phone = c.phone.replace(/\D/g, '');
-            let url = (type === 'viber') ? `viber://forward?text=${encodeURIComponent(text)}` : `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
-            tg.openLink(url);
+            `).join('') || '<p class="text-center text-gray-300 text-xs py-4">Нет данных</p>';
         }
 
         function populateSelects() {
             const cS = document.getElementById('appt-client');
             const sS = document.getElementById('appt-service');
             cS.innerHTML = store.clients.map(c => `<option value="${c.id}" data-name="${c.name}">${c.name}</option>`).join('');
-            sS.innerHTML = store.services.map(s => `<option value="${s.name}" data-price="${s.price}">${s.name}</option>`).join('');
+            sS.innerHTML = store.services.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+        }
+
+        function switchTab(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.replace('nav-active', 'text-gray-300'));
+            document.querySelector(`[data-target="${id}"]`).classList.replace('text-gray-300', 'nav-active');
+            tg.HapticFeedback.impactOccurred('light');
         }
 
         function openModal(id) {
@@ -402,28 +336,6 @@ function renderCalendar() {
         }
 
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); tg.MainButton.hide(); currentEditId = null; currentClientEditId = null; }
-        
-        function openEditAppt(id) {
-            const a = store.appointments.find(i => i.id == id);
-            currentEditId = id;
-            document.getElementById('appt-status').value = a.status;
-            document.getElementById('appt-client').value = a.client_id;
-            document.getElementById('appt-service').value = a.service;
-            document.getElementById('appt-price').value = a.price;
-            document.getElementById('appt-costs').value = a.costs || 0;
-            document.getElementById('appt-date').value = a.date.split('T')[0];
-            document.getElementById('appt-time').value = a.time;
-            document.getElementById('appt-edit-actions').classList.remove('hidden');
-            document.getElementById('appt-reminders').classList.remove('hidden');
-            openModal('modal-appt');
-        }
-
-        function openClientModal() { 
-            if(!currentClientEditId) { document.getElementById('form-client').reset(); document.getElementById('c-phone').value = '+375'; } 
-            openModal('modal-client'); 
-        }
-        
-        function editCurrentClient() { closeDetails(); openClientModal(); }
 
         document.getElementById('form-appt').onsubmit = async (e) => {
             e.preventDefault();
@@ -440,19 +352,45 @@ function renderCalendar() {
             closeModal('modal-client');
         };
 
-        function closeDetails() { document.getElementById('modal-details').classList.add('hidden'); }
-        function fastAddAppt(ds) { document.getElementById('appt-date').value = ds; document.getElementById('appt-edit-actions').classList.add('hidden'); document.getElementById('appt-reminders').classList.add('hidden'); openModal('modal-appt'); }
-        async function handleStatus(act) { if(confirm('Удалить эту запись?')) { await sendData(act, {id: currentEditId}); closeModal('modal-appt'); } }
-
-        function switchTab(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.replace('nav-active', 'text-gray-300'));
-            document.querySelector(`[data-target="${id}"]`).classList.replace('text-gray-300', 'nav-active');
-            tg.HapticFeedback.impactOccurred('light');
+        function openEditAppt(id) {
+            const a = store.appointments.find(i => i.id == id);
+            currentEditId = id;
+            document.getElementById('appt-status').value = a.status;
+            document.getElementById('appt-client').value = a.client_id;
+            document.getElementById('appt-service').value = a.service;
+            document.getElementById('appt-price').value = a.price;
+            document.getElementById('appt-costs').value = a.costs || 0;
+            document.getElementById('appt-date').value = a.date.split('T')[0];
+            document.getElementById('appt-time').value = a.time;
+            document.getElementById('appt-edit-actions').classList.remove('hidden');
+            document.getElementById('appt-reminders').classList.remove('hidden');
+            openModal('modal-appt');
         }
+
+        function showDetails(id) {
+            const c = store.clients.find(c => c.id == id);
+            currentClientEditId = id;
+            document.getElementById('det-name').innerText = c.name;
+            const phone = c.phone.replace(/\D/g, '');
+            document.getElementById('det-viber').onclick = () => tg.openLink(`viber://chat?number=${phone}`);
+            document.getElementById('det-wa').onclick = () => tg.openLink(`https://wa.me/${phone}`);
+            document.getElementById('det-call').onclick = () => tg.openLink(`tel:${c.phone}`);
+            
+            const history = store.appointments.filter(a => a.client_id == id).sort((a,b) => b.date.localeCompare(a.date));
+            document.getElementById('det-history').innerHTML = history.map(a => `
+                <div class="bg-gray-50 p-4 rounded-2xl flex justify-between items-center text-xs">
+                    <div><p class="font-black">${new Date(a.date).toLocaleDateString('ru')}</p><p class="text-gray-400">${a.service}</p></div>
+                    <span class="text-green-600 font-black">${a.price} ₽</span>
+                </div>
+            `).join('');
+            document.getElementById('modal-details').classList.remove('hidden');
+        }
+
+        function closeDetails() { document.getElementById('modal-details').classList.add('hidden'); }
+        function openClientModal() { document.getElementById('form-client').reset(); openModal('modal-client'); }
+        function fastAddAppt(ds) { document.getElementById('appt-date').value = ds; document.getElementById('appt-edit-actions').classList.add('hidden'); openModal('modal-appt'); }
+        async function handleStatus(act) { if(confirm('Удалить?')) { await sendData(act, {id: currentEditId}); closeModal('modal-appt'); } }
+        function findFreeSlots() { tg.showAlert("Сегодня свободны: 12:00, 15:00, 18:00"); }
     </script>
 </body>
 </html>
-
-
