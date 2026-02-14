@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LuxeCRM</title>
+    <title>LuxeBeauty Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -64,7 +64,7 @@
     </div>
 
     <div id="page-waitlist" class="page p-5 hidden">
-        <h1 class="text-2xl font-black mb-6 text-gray-900">Очередь</h1>
+        <h1 class="text-2xl font-black mb-6">Очередь</h1>
         <div id="waitlist-list" class="space-y-3"></div>
     </div>
 
@@ -80,7 +80,7 @@
     <div id="modal-appt" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-appt')"></div>
         <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7 max-h-[90vh] overflow-y-auto">
-            <h2 class="text-xl font-black mb-6">Запись</h2>
+            <h2 class="text-xl font-black mb-6">Детали записи</h2>
             <form id="form-appt" class="space-y-4">
                 <select id="appt-status" class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none border-none">
                     <option value="waiting">⏳ Ожидает</option>
@@ -148,7 +148,7 @@
                 <input type="text" id="w-service" placeholder="Услуга" class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
                 <input type="text" id="w-preferred_date" placeholder="Желаемая дата" class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
                 <div id="waitlist-actions" class="hidden pt-4">
-                    <button type="button" onclick="deleteWaitlist()" class="w-full bg-red-50 text-red-500 p-4 rounded-2xl font-bold text-xs uppercase">Удалить</button>
+                    <button type="button" onclick="deleteWaitlist()" class="w-full bg-red-50 text-red-500 p-4 rounded-2xl font-bold text-xs uppercase">Удалить из очереди</button>
                 </div>
             </form>
         </div>
@@ -157,7 +157,7 @@
     <div id="modal-expense" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-expense')"></div>
         <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7">
-            <h2 class="text-xl font-black mb-6">Расход</h2>
+            <h2 class="text-xl font-black mb-6">Новый расход</h2>
             <form id="form-expense" class="space-y-4">
                 <input type="date" id="e-date" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
                 <input type="text" id="e-category" placeholder="Категория" class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
@@ -174,7 +174,7 @@
     </nav>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbxQdzRN1d1czXOV0KxMzTmonYMcGXH0Odb0NkJdh1ZIEqUhLL71QtBPsEb3ohZVffYgCA/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxVE2p8G7wvns_XUigewAIh71RITArN5qhb1SdUIrz5EwFbW63tuH-Jjzg_IrMUUFgWiw/exec";
         const tg = window.Telegram.WebApp;
         let store = { clients: [], appointments: [], expenses: [], waitlist: [], services: [] };
         let currentTab = 'page-appointments';
@@ -188,7 +188,11 @@
             return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
 
-        document.addEventListener('DOMContentLoaded', () => { tg.expand(); tg.ready(); loadData(); });
+        document.addEventListener('DOMContentLoaded', () => { 
+            tg.expand(); 
+            tg.ready();
+            loadData(); 
+        });
 
         async function loadData() {
             document.getElementById('loader').classList.remove('hidden');
@@ -196,12 +200,15 @@
                 const res = await fetch(`${API_URL}?action=getData`);
                 store = await res.json();
                 refreshUI();
-            } finally { document.getElementById('loader').classList.add('hidden'); }
+            } finally { 
+                document.getElementById('loader').classList.add('hidden'); 
+            }
         }
 
         function makeCall(phone) {
             if (!phone) return;
-            window.location.assign(`tel:${phone.replace(/[^0-9+]/g, '')}`);
+            const cleanPhone = phone.replace(/[^0-9+]/g, '');
+            window.location.href = `tel:${cleanPhone}`;
         }
 
         function refreshUI() {
@@ -243,7 +250,7 @@
                     <div><p class="font-bold text-sm text-gray-800">${a.client_name}</p><p class="text-[10px] text-purple-600 font-bold uppercase">${a.time} - ${a.service}</p></div>
                     <p class="font-black text-sm">${a.price} ₽</p>
                 </div>
-            `).join('') || '<p class="text-center text-gray-300 py-6 text-[10px] font-black uppercase">Пусто</p>';
+            `).join('') || '<p class="text-center text-gray-300 py-6 text-[10px] font-black uppercase">Нет записей</p>';
         }
 
         function renderClients() {
@@ -286,9 +293,15 @@
 
         function renderWaitlist() {
             document.getElementById('waitlist-list').innerHTML = store.waitlist.map(w => `
-                <div onclick="openEditWaitlist('${w.id}')" class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-purple-500">
-                    <p class="font-black text-sm">${w.name}</p>
-                    <p class="text-[10px] text-purple-600 font-bold mt-1">${w.preferred_date || 'Любая дата'} - ${w.service || 'Услуга не указана'}</p>
+                <div onclick="openEditWaitlist('${w.id}')" class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-purple-500 active:scale-95 transition-all">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-black text-sm text-gray-800">${w.name}</p>
+                            <p class="text-[10px] text-gray-400 font-bold">${w.phone}</p>
+                        </div>
+                        <span class="bg-purple-50 text-purple-600 text-[9px] font-black px-2 py-1 rounded-lg uppercase">Ожидание</span>
+                    </div>
+                    <p class="text-[10px] text-purple-600 font-bold mt-2"><i class="fas fa-calendar-alt mr-1"></i> ${w.preferred_date || 'Любая дата'} • ${w.service || 'Услуга не указана'}</p>
                 </div>
             `).join('') || '<p class="text-center text-gray-300 py-10 text-[10px] font-black uppercase">Очередь пуста</p>';
         }
@@ -306,8 +319,11 @@
             `).join('');
         }
 
+        // --- ИСПРАВЛЕННАЯ ФУНКЦИЯ СОХРАНЕНИЯ ---
         async function save(type) {
             tg.MainButton.showProgress();
+            tg.MainButton.disable(); // Защита от двойного клика
+
             try {
                 let data = {};
                 if (type === 'Appointment') {
@@ -321,19 +337,41 @@
                     data = { date: document.getElementById('e-date').value, category: document.getElementById('e-category').value, amount: document.getElementById('e-amount').value };
                 }
                 const action = (data.id) ? `update${type}` : `add${type}`;
-                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...data }) });
-                await loadData();
-                closeModal(`modal-${type.toLowerCase()}`);
-                if (isQuickClient) { isQuickClient = false; openModal('modal-appt'); }
+                
+                const response = await fetch(API_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ action, ...data }) 
+                });
+
+                if (response.ok) {
+                    closeModal(`modal-${type.toLowerCase()}`); // Закрываем сразу для отзывчивости
+                    await loadData(); // Обновляем данные в фоне
+                    if (isQuickClient) { isQuickClient = false; openModal('modal-appt'); }
+                } else {
+                    tg.showAlert("Ошибка сервера. Попробуйте еще раз.");
+                }
+            } catch (e) {
+                console.error(e);
+                tg.showAlert("Произошла ошибка при сохранении.");
             } finally {
+                // ОБЯЗАТЕЛЬНО возвращаем кнопку в рабочее состояние
                 tg.MainButton.hideProgress();
+                tg.MainButton.enable();
                 tg.MainButton.hide();
             }
         }
 
         function openModal(id) {
             document.getElementById(id).classList.remove('hidden');
-            tg.MainButton.setText("СОХРАНИТЬ").show().offClick().onClick(() => {
+            tg.MainButton.setParams({
+                text: "СОХРАНИТЬ",
+                color: "#7C3AED",
+                is_visible: true,
+                is_active: true
+            });
+            
+            tg.MainButton.offClick(); // Очищаем старые события
+            tg.MainButton.onClick(() => {
                 if (id === 'modal-appt') save('Appointment');
                 if (id === 'modal-client') save('Client');
                 if (id === 'modal-expense') save('Expense');
@@ -383,15 +421,73 @@
             if(id === 'page-budget') fab.classList.add('hidden'); else fab.classList.remove('hidden');
         }
 
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); tg.MainButton.hide(); editId = null; }
+        function closeModal(id) { 
+            document.getElementById(id).classList.add('hidden'); 
+            tg.MainButton.hide(); 
+            tg.MainButton.hideProgress();
+            editId = null; 
+        }
+
         function closeDetails() { document.getElementById('modal-details').classList.add('hidden'); }
         function openQuickClient() { isQuickClient = true; document.getElementById('modal-appt').classList.add('hidden'); openModal('modal-client'); }
         function toggleSleeping() { showSleeping = !showSleeping; document.getElementById('btn-sleeping').classList.toggle('text-purple-600'); renderClients(); }
 
-        async function deleteAppt() { if(confirm('Удалить запись?')) { tg.MainButton.showProgress(); await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteAppointment', id: editId }) }); await loadData(); closeModal('modal-appt'); } }
-        async function deleteWaitlist() { if(confirm('Удалить?')) { tg.MainButton.showProgress(); await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteWaitlist', id: editId }) }); await loadData(); closeModal('modal-waitlist'); } }
-        function editClient() { const c = store.clients.find(i => String(i.id) === String(editId)); document.getElementById('c-name').value = c.name; document.getElementById('c-phone').value = c.phone; document.getElementById('c-instagram').value = c.instagram || ''; document.getElementById('c-notes').value = c.notes || ''; document.getElementById('modal-details').classList.add('hidden'); openModal('modal-client'); }
-        function handleFabClick() { editId = null; if (currentTab === 'page-appointments') { document.getElementById('form-appt').reset(); document.getElementById('appt-actions').classList.add('hidden'); openModal('modal-appt'); } else if (currentTab === 'page-clients') { document.getElementById('form-client').reset(); openModal('modal-client'); } else if (currentTab === 'page-waitlist') { document.getElementById('form-waitlist').reset(); document.getElementById('waitlist-actions').classList.add('hidden'); openModal('modal-waitlist'); } else if (currentTab === 'page-budget') { document.getElementById('form-expense').reset(); openModal('modal-expense'); } }
+        async function deleteAppt() { 
+            if(confirm('Удалить запись?')) { 
+                tg.MainButton.showProgress(); 
+                try {
+                    await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteAppointment', id: editId }) }); 
+                    await loadData(); 
+                    closeModal('modal-appt'); 
+                } finally {
+                    tg.MainButton.hideProgress();
+                    tg.MainButton.hide();
+                }
+            } 
+        }
+
+        async function deleteWaitlist() { 
+            if(confirm('Удалить клиента из очереди?')) { 
+                tg.MainButton.showProgress(); 
+                try {
+                    await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteWaitlist', id: editId }) }); 
+                    await loadData(); 
+                    closeModal('modal-waitlist'); 
+                } finally {
+                    tg.MainButton.hideProgress();
+                    tg.MainButton.hide();
+                }
+            } 
+        }
+
+        function editClient() { 
+            const c = store.clients.find(i => String(i.id) === String(editId)); 
+            document.getElementById('c-name').value = c.name; 
+            document.getElementById('c-phone').value = c.phone; 
+            document.getElementById('c-instagram').value = c.instagram || ''; 
+            document.getElementById('c-notes').value = c.notes || ''; 
+            document.getElementById('modal-details').classList.add('hidden'); 
+            openModal('modal-client'); 
+        }
+
+        function handleFabClick() { 
+            editId = null; 
+            if (currentTab === 'page-appointments') { 
+                document.getElementById('form-appt').reset(); 
+                document.getElementById('appt-actions').classList.add('hidden'); 
+                openModal('modal-appt'); 
+            } else if (currentTab === 'page-clients') { 
+                document.getElementById('form-client').reset(); 
+                openModal('modal-client'); 
+            } else if (currentTab === 'page-waitlist') { 
+                document.getElementById('form-waitlist').reset(); 
+                document.getElementById('waitlist-actions').classList.add('hidden'); 
+                openModal('modal-waitlist'); 
+            } else if (currentTab === 'page-budget') { 
+                document.getElementById('form-expense').reset(); 
+                openModal('modal-expense'); 
+            } 
+        }
     </script>
 </body>
 </html>
