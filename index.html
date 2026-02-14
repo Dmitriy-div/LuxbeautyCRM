@@ -11,7 +11,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #F8F9FB; color: #111827; -webkit-tap-highlight-color: transparent; }
         
-        /* Сетка времени */
         .time-grid-container { background: white; border-radius: 24px; border: 1px solid #F1F1F4; position: relative; overflow: hidden; }
         .time-row { height: 64px; border-top: 1px solid #F8F9FB; position: relative; }
         .time-label { position: absolute; left: 12px; top: -10px; font-size: 10px; font-weight: 700; color: #9CA3AF; background: white; padding: 0 4px; z-index: 5; }
@@ -23,19 +22,13 @@
             box-shadow: 0 4px 12px rgba(124, 58, 237, 0.08);
         }
 
-        /* FAB */
         .fab { position: fixed; bottom: 100px; right: 20px; width: 64px; height: 64px; background: #7C3AED; color: white; border-radius: 32px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 12px 24px rgba(124, 58, 237, 0.3); z-index: 50; transition: 0.2s; }
         .fab:active { transform: scale(0.9); }
-        
-        .nav-btn { color: #9CA3AF; font-weight: 700; transition: 0.2s; }
+        .nav-btn { color: #9CA3AF; font-weight: 700; transition: 0.2s; border-top: 2px solid transparent; }
         .nav-active { color: #7C3AED; }
 
-        /* Статусы */
         .card-completed { border-left: 4px solid #10B981 !important; }
         .card-cancelled { border-left: 4px solid #EF4444 !important; opacity: 0.6; }
-        .status-waiting { border-left: 4px solid #F59E0B; }
-        .status-confirmed { border-left: 4px solid #7C3AED; }
-
         .vip-badge { background: linear-gradient(135deg, #FFD700, #FFA500); color: white; padding: 2px 8px; border-radius: 8px; font-size: 9px; font-weight: 800; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
@@ -49,17 +42,15 @@
     <div id="main-fab" class="fab" onclick="handleFabClick()"><i class="fas fa-plus"></i></div>
 
     <div id="page-appointments" class="page p-5">
-        <h1 class="text-2xl font-black mb-6">Записи</h1>
+        <h1 class="text-2xl font-black mb-6 text-gray-900">Записи</h1>
         <div class="bg-indigo-600 rounded-[2.5rem] p-7 text-white shadow-xl mb-8">
             <p class="text-indigo-100 text-[10px] font-bold uppercase tracking-widest mb-1">Выручка сегодня</p>
             <h2 id="today-profit" class="text-4xl font-black">0 ₽</h2>
         </div>
-
         <div class="time-grid-container mb-8">
             <div id="time-grid-content" class="relative"></div>
         </div>
-
-        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Список на сегодня</h3>
+        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Список записей</h3>
         <div id="home-upcoming" class="space-y-3"></div>
     </div>
 
@@ -67,9 +58,9 @@
         <h1 class="text-2xl font-black mb-6">Клиенты</h1>
         <div class="relative mb-6">
             <i class="fas fa-search absolute left-4 top-4 text-gray-400"></i>
-            <input type="text" id="client-search" oninput="renderClients()" placeholder="Поиск..." class="w-full bg-white p-4 pl-12 rounded-2xl border border-gray-100 outline-none shadow-sm">
+            <input type="text" id="client-search" oninput="renderClients()" placeholder="Поиск по имени или телефону..." class="w-full bg-white p-4 pl-12 rounded-2xl border border-gray-100 outline-none shadow-sm">
         </div>
-        <button onclick="toggleSleeping()" id="btn-sleeping" class="mb-6 px-4 py-2 bg-white border border-gray-200 rounded-xl text-[10px] font-bold text-gray-500 uppercase">💤 Спящие (>45 дн)</button>
+        <button onclick="toggleSleeping()" id="btn-sleeping" class="mb-6 px-4 py-2 bg-white border border-gray-200 rounded-xl text-[10px] font-bold text-gray-500 uppercase transition-all">💤 Спящие (>45 дн)</button>
         <div id="clients-list" class="space-y-3"></div>
     </div>
 
@@ -79,7 +70,7 @@
     </div>
 
     <div id="page-budget" class="page p-5 hidden">
-        <h1 class="text-2xl font-black mb-6">Бюджет</h1>
+        <h1 class="text-2xl font-black mb-6 text-gray-900">Бюджет</h1>
         <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm text-center mb-8">
             <p class="text-gray-400 text-[10px] font-bold uppercase mb-2">Чистая прибыль (Месяц)</p>
             <h2 id="stat-net-profit" class="text-4xl font-black text-gray-900">0 ₽</h2>
@@ -90,7 +81,7 @@
     <div id="modal-appt" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-appt')"></div>
         <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black">Запись</h2></div>
+            <h2 class="text-xl font-black mb-6">Детали записи</h2>
             <form id="form-appt" class="space-y-4">
                 <select id="appt-status" class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none border-none">
                     <option value="waiting">⏳ Ожидает</option>
@@ -109,8 +100,8 @@
                     <input type="time" id="appt-time" required class="w-1/2 bg-gray-50 p-4 rounded-2xl font-bold outline-none">
                 </div>
                 <div id="appt-actions" class="hidden grid grid-cols-2 gap-3 pt-4">
-                    <button type="button" onclick="copyReminderText()" class="bg-purple-600 text-white p-4 rounded-2xl font-bold text-xs">УВЕДОМЛЕНИЕ</button>
-                    <button type="button" onclick="deleteAppt()" class="bg-red-50 text-red-500 p-4 rounded-2xl font-bold text-xs">УДАЛИТЬ</button>
+                    <button type="button" onclick="copyReminderText()" class="bg-purple-600 text-white p-4 rounded-2xl font-bold text-xs uppercase">Уведомление</button>
+                    <button type="button" onclick="deleteAppt()" class="bg-red-50 text-red-500 p-4 rounded-2xl font-bold text-xs uppercase">Удалить</button>
                 </div>
             </form>
         </div>
@@ -119,11 +110,12 @@
     <div id="modal-client" class="fixed inset-0 z-[60] hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-client')"></div>
         <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7">
-            <h2 class="text-xl font-black mb-6">Клиент</h2>
+            <h2 class="text-xl font-black mb-6">Карточка клиента</h2>
             <form id="form-client" class="space-y-4">
                 <input type="text" id="c-name" placeholder="Имя" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
                 <input type="tel" id="c-phone" placeholder="Телефон" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
-                <textarea id="c-notes" placeholder="Заметки..." class="w-full bg-gray-50 p-4 rounded-2xl font-medium outline-none h-32"></textarea>
+                <input type="text" id="c-instagram" placeholder="Instagram / Ник" class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
+                <textarea id="c-notes" placeholder="Заметки (формулы, предпочтения)..." class="w-full bg-gray-50 p-4 rounded-2xl font-medium outline-none h-32"></textarea>
             </form>
         </div>
     </div>
@@ -136,7 +128,7 @@
                 <button onclick="editClient()" class="bg-gray-100 w-12 h-12 rounded-2xl flex items-center justify-center text-gray-600"><i class="fas fa-pen"></i></button>
             </div>
             <div class="grid grid-cols-2 gap-4 mb-8">
-                <button id="det-call" class="bg-gray-900 text-white p-5 rounded-[1.5rem] font-bold flex items-center justify-center gap-3"><i class="fas fa-phone-alt"></i> Позвонить</button>
+                <button id="det-call" class="bg-gray-900 text-white p-5 rounded-[1.5rem] font-bold flex items-center justify-center gap-3 active:scale-95 transition-all"><i class="fas fa-phone-alt"></i> Позвонить</button>
                 <div class="bg-purple-50 p-5 rounded-[1.5rem] text-center"><p class="text-[10px] font-bold text-purple-400 uppercase">LTV</p><p id="det-total" class="text-xl font-black text-purple-600"></p></div>
             </div>
             <div class="bg-amber-50 p-6 rounded-[2rem] border border-amber-100 mb-8">
@@ -148,48 +140,58 @@
         </div>
     </div>
 
+    <div id="modal-waitlist" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-waitlist')"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7">
+            <h2 class="text-xl font-black mb-6">В очередь</h2>
+            <form id="form-waitlist" class="space-y-4">
+                <input type="text" id="w-name" placeholder="Имя" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
+                <input type="tel" id="w-phone" placeholder="Телефон" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
+                <input type="text" id="w-service" placeholder="Услуга" class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
+                <input type="text" id="w-preferred_date" placeholder="Желаемая дата/время" class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
+                <div id="waitlist-actions" class="hidden pt-4">
+                    <button type="button" onclick="deleteWaitlist()" class="w-full bg-red-50 text-red-500 p-4 rounded-2xl font-bold text-xs uppercase">Удалить из очереди</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="modal-expense" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-expense')"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7"><h2 class="text-xl font-black mb-6">Расход</h2>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7">
+            <h2 class="text-xl font-black mb-6">Новый расход</h2>
             <form id="form-expense" class="space-y-4">
                 <input type="date" id="e-date" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
-                <input type="text" id="e-category" placeholder="Категория" class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
+                <select id="e-category" class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none border-none">
+                    <option value="Материалы">Материалы</option>
+                    <option value="Аренда">Аренда</option>
+                    <option value="Реклама">Реклама</option>
+                    <option value="Другое">Другое</option>
+                </select>
                 <input type="number" id="e-amount" placeholder="Сумма ₽" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
             </form>
         </div>
     </div>
 
-    <div id="modal-waitlist" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-waitlist')"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7"><h2 class="text-xl font-black mb-6">Очередь</h2>
-            <form id="form-waitlist" class="space-y-4">
-                <input type="text" id="w-name" placeholder="Имя" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
-                <input type="tel" id="w-phone" placeholder="Телефон" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
-                <input type="text" id="w-date" placeholder="Желаемая дата" class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
-            </form>
-        </div>
-    </div>
-
     <nav class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 flex justify-around py-4 pb-8 z-40">
-        <button onclick="switchTab('page-appointments')" class="nav-btn nav-active flex flex-col items-center w-1/4" data-target="page-appointments"><i class="fas fa-calendar-alt text-xl mb-1"></i><span class="text-[10px] font-black uppercase">Записи</span></button>
+        <button onclick="switchTab('page-appointments')" class="nav-btn nav-active flex flex-col items-center w-1/4" data-target="page-appointments"><i class="fas fa-calendar-check text-xl mb-1"></i><span class="text-[10px] font-black uppercase">Записи</span></button>
         <button onclick="switchTab('page-clients')" class="nav-btn flex flex-col items-center w-1/4" data-target="page-clients"><i class="fas fa-users text-xl mb-1"></i><span class="text-[10px] font-black uppercase">Клиенты</span></button>
         <button onclick="switchTab('page-waitlist')" class="nav-btn flex flex-col items-center w-1/4" data-target="page-waitlist"><i class="fas fa-hourglass-half text-xl mb-1"></i><span class="text-[10px] font-black uppercase">Очередь</span></button>
-        <button onclick="switchTab('page-budget')" class="nav-btn flex flex-col items-center w-1/4" data-target="page-budget"><i class="fas fa-wallet text-xl mb-1"></i><span class="text-[10px] font-black uppercase">Бюджет</span></button>
+        <button onclick="switchTab('page-budget')" class="nav-btn flex flex-col items-center w-1/4" data-target="page-budget"><i class="fas fa-chart-pie text-xl mb-1"></i><span class="text-[10px] font-black uppercase">Бюджет</span></button>
     </nav>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbzxdJrc18Vk0IezwitYtSfNpheesZ8BXH6eXJS71C9nlnzg-D-2cZGMbBTx8z1HfjgVLg/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbyOcuuf5W8bcA4AAzGIC0bwrSnS_xAJ4rNmqbfSqLW5WcGSm-ZriL__XHU4QVLjNP5cwA/exec";
         const tg = window.Telegram.WebApp;
         let store = { clients: [], appointments: [], expenses: [], waitlist: [], services: [] };
         let currentTab = 'page-appointments';
         let editId = null;
         let isQuickClient = false;
+        let showSleeping = false;
 
-        // --- УНИВЕРСАЛЬНЫЙ КОНВЕРТЕР ДАТЫ ---
         function fmtDate(d) {
             if (!d) return '--.--';
             const date = new Date(d);
-            if (isNaN(date)) return d; // Если это уже строка yyyy-mm-dd
             return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
 
@@ -216,7 +218,6 @@
             sSel.innerHTML = store.services.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
         }
 
-        // Шкала времени
         function renderTimeGrid() {
             const cont = document.getElementById('time-grid-content');
             cont.innerHTML = '';
@@ -229,7 +230,7 @@
 
             dayAppts.forEach(a => {
                 const [h, m] = a.time.split(':').map(Number);
-                const top = (h - 8) * 64 + (m / 60) * 64;
+                const top = (h - 8) * 64 + m;
                 cont.innerHTML += `<div class="appt-slot" style="top: ${top}px; height: 50px;" onclick="openEditAppt('${a.id}')">
                     <p class="text-[11px] font-black text-purple-700">${a.time} • ${a.client_name}</p>
                     <p class="text-[9px] font-bold text-purple-400 uppercase">${a.service}</p>
@@ -240,63 +241,95 @@
 
         function renderAppts() {
             const today = new Date().toISOString().split('T')[0];
-            const list = store.appointments.filter(a => a.date === today);
+            const list = store.appointments.filter(a => a.date === today).sort((a,b) => a.time.localeCompare(b.time));
             const rev = list.filter(a => a.status !== 'cancelled').reduce((s, a) => s + Number(a.price), 0);
             document.getElementById('today-profit').innerText = rev.toLocaleString() + ' ₽';
 
             document.getElementById('home-upcoming').innerHTML = list.map(a => `
                 <div onclick="openEditAppt('${a.id}')" class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center card-${a.status}">
-                    <div><p class="font-bold text-sm">${a.client_name}</p><p class="text-[10px] text-purple-600 font-bold">${a.time} - ${a.service}</p></div>
+                    <div><p class="font-bold text-sm text-gray-800">${a.client_name}</p><p class="text-[10px] text-purple-600 font-bold uppercase">${a.time} - ${a.service}</p></div>
                     <p class="font-black text-sm">${a.price} ₽</p>
                 </div>
-            `).join('') || '<p class="text-center text-gray-300 py-4 font-bold text-xs">ПУСТО</p>';
+            `).join('') || '<p class="text-center text-gray-300 py-6 text-[10px] font-black uppercase">Записей нет</p>';
         }
 
         function renderClients() {
             const term = document.getElementById('client-search').value.toLowerCase();
-            const filtered = store.clients.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term));
+            let filtered = store.clients.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term));
+            
+            if (showSleeping) {
+                const now = new Date();
+                filtered = filtered.filter(c => {
+                    if (!c.last_visit) return true;
+                    const diff = (now - new Date(c.last_visit)) / (1000 * 60 * 60 * 24);
+                    return diff > 45;
+                });
+            }
+
             document.getElementById('clients-list').innerHTML = filtered.map(c => `
                 <div onclick="showDetails('${c.id}')" class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <p class="font-black text-sm">${c.name}</p>
-                            <span class="vip-badge">${c.status_label}</span>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center font-black">${c.name[0]}</div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <p class="font-black text-sm">${c.name}</p>
+                                <span class="vip-badge">${c.status_label}</span>
+                            </div>
+                            <p class="text-[10px] text-gray-400 font-bold">${c.phone}</p>
                         </div>
-                        <p class="text-[10px] text-gray-400 font-bold">${c.phone}</p>
                     </div>
                     <i class="fas fa-chevron-right text-gray-200"></i>
                 </div>
             `).join('');
         }
 
-        // --- КАРТОЧКА КЛИЕНТА (ИСПРАВЛЕНО) ---
         function showDetails(id) {
             const c = store.clients.find(item => String(item.id) === String(id));
             if (!c) return;
-
+            editId = id;
             document.getElementById('det-name').innerText = c.name;
             document.getElementById('det-phone').innerText = c.phone;
-            document.getElementById('det-notes-view').innerText = c.notes || 'Заметок нет';
-            document.getElementById('det-total').innerText = c.ltv.toLocaleString() + ' ₽';
+            document.getElementById('det-notes-view').innerText = c.notes || 'Записей нет';
+            document.getElementById('det-total').innerText = Number(c.ltv).toLocaleString() + ' ₽';
             
-            document.getElementById('det-call').onclick = () => tg.openLink(`tel:${c.phone}`);
+            // ИСПРАВЛЕНИЕ: Кнопка звонка
+            document.getElementById('det-call').onclick = (e) => {
+                e.stopPropagation();
+                tg.openLink(`tel:${c.phone}`);
+            };
 
-            const history = store.appointments.filter(a => String(a.client_id) === String(id));
-            document.getElementById('det-history').innerHTML = history.sort((a,b) => b.date.localeCompare(a.date)).map(a => `
+            const history = store.appointments.filter(a => String(a.client_id) === String(id)).sort((a,b) => b.date.localeCompare(a.date));
+            document.getElementById('det-history').innerHTML = history.map(a => `
                 <div class="bg-gray-50 p-4 rounded-2xl flex justify-between items-center">
-                    <div><p class="text-[10px] font-black text-gray-400 uppercase">${fmtDate(a.date)}</p><p class="text-xs font-bold">${a.service}</p></div>
+                    <div><p class="text-[10px] font-black text-gray-400 uppercase">${fmtDate(a.date)}</p><p class="text-xs font-bold text-gray-800">${a.service}</p></div>
                     <div class="flex items-center gap-3">
-                        <a href="tel:${c.phone}" class="text-gray-300"><i class="fas fa-phone-alt"></i></a>
+                        <button onclick="tg.openLink('tel:${c.phone}')" class="text-gray-300 w-8 h-8 rounded-full flex items-center justify-center bg-white"><i class="fas fa-phone-alt fa-xs"></i></button>
                         <p class="font-black text-xs">${a.price} ₽</p>
                     </div>
                 </div>
             `).join('');
             
-            editId = id;
             document.getElementById('modal-details').classList.remove('hidden');
         }
 
-        // --- БЮДЖЕТ ---
+        function renderWaitlist() {
+            document.getElementById('waitlist-list').innerHTML = store.waitlist.map(w => `
+                <div onclick="openEditWaitlist('${w.id}')" class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-purple-500 active:scale-95 transition-all">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-black text-sm text-gray-800">${w.name}</p>
+                            <p class="text-[10px] text-gray-400 font-bold">${w.phone}</p>
+                        </div>
+                        <span class="bg-purple-50 text-purple-600 text-[9px] font-black px-2 py-1 rounded-lg uppercase">В очереди</span>
+                    </div>
+                    <div class="mt-3 flex gap-4">
+                        <p class="text-[10px] font-bold text-purple-600"><i class="fas fa-calendar mr-1"></i> ${w.preferred_date || 'Любая дата'}</p>
+                        <p class="text-[10px] font-bold text-gray-500"><i class="fas fa-magic mr-1"></i> ${w.service || 'Не указана'}</p>
+                    </div>
+                </div>
+            `).join('') || '<p class="text-center text-gray-300 py-10 text-[10px] font-black uppercase">Очередь пуста</p>';
+        }
+
         function renderBudget() {
             const currentMonth = new Date().getMonth();
             const monthAppts = store.appointments.filter(a => new Date(a.date).getMonth() === currentMonth && a.status !== 'cancelled');
@@ -304,93 +337,75 @@
             const exp = store.expenses.filter(e => new Date(e.date).getMonth() === currentMonth).reduce((s, e) => s + Number(e.amount), 0);
             
             document.getElementById('stat-net-profit').innerText = (rev - exp).toLocaleString() + ' ₽';
-            document.getElementById('expenses-list').innerHTML = store.expenses.map(e => `
-                <div class="bg-white p-3 rounded-xl flex justify-between text-xs font-bold">
-                    <span class="text-gray-400">${fmtDate(e.date)}</span>
-                    <span>${e.category}</span>
+            document.getElementById('expenses-list').innerHTML = store.expenses.filter(e => new Date(e.date).getMonth() === currentMonth).map(e => `
+                <div class="bg-white p-3 rounded-xl flex justify-between text-xs font-bold border border-gray-50 shadow-sm">
+                    <span class="text-gray-400 uppercase">${fmtDate(e.date)}</span>
+                    <span class="text-gray-700">${e.category}</span>
                     <span class="text-red-500">-${e.amount} ₽</span>
                 </div>
             `).join('');
         }
 
-        // --- ОЧЕРЕДЬ ---
-        function renderWaitlist() {
-            document.getElementById('waitlist-list').innerHTML = store.waitlist.map(w => `
-                <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-purple-500">
-                    <p class="font-black text-sm">${w.name}</p>
-                    <p class="text-xs text-purple-600 font-bold mt-1">${w.preferred_date || 'Любая дата'}</p>
-                </div>
-            `).join('');
-        }
-
-        // --- УПРАВЛЕНИЕ ОКНАМИ ---
+        // --- ЛОГИКА ОКОН ---
         function handleFabClick() {
             editId = null;
             if (currentTab === 'page-appointments') { document.getElementById('form-appt').reset(); document.getElementById('appt-actions').classList.add('hidden'); openModal('modal-appt'); }
             else if (currentTab === 'page-clients') { document.getElementById('form-client').reset(); openModal('modal-client'); }
-            else if (currentTab === 'page-waitlist') { openModal('modal-waitlist'); }
-            else if (currentTab === 'page-budget') { openModal('modal-expense'); }
+            else if (currentTab === 'page-waitlist') { document.getElementById('form-waitlist').reset(); document.getElementById('waitlist-actions').classList.add('hidden'); openModal('modal-waitlist'); }
+            else if (currentTab === 'page-budget') { document.getElementById('form-expense').reset(); openModal('modal-expense'); }
         }
 
         function openModal(id) {
             document.getElementById(id).classList.remove('hidden');
             tg.MainButton.setText("СОХРАНИТЬ").show().offClick().onClick(() => {
-                if (id === 'modal-appt') saveAppt();
-                if (id === 'modal-client') saveClient();
-                if (id === 'modal-expense') saveExpense();
-                if (id === 'modal-waitlist') saveWaitlist();
+                if (id === 'modal-appt') save('Appointment');
+                if (id === 'modal-client') save('Client');
+                if (id === 'modal-expense') save('Expense');
+                if (id === 'modal-waitlist') save('Waitlist');
             });
         }
 
-        async function saveAppt() {
-            const cSel = document.getElementById('appt-client');
-            const data = {
-                id: editId,
-                status: document.getElementById('appt-status').value,
-                client_id: cSel.value,
-                client_name: cSel.options[cSel.selectedIndex].dataset.name,
-                service: document.getElementById('appt-service').value,
-                price: document.getElementById('appt-price').value,
-                date: document.getElementById('appt-date').value,
-                time: document.getElementById('appt-time').value
-            };
-            await send('Appointment', data);
-        }
-
-        async function saveClient() {
-            const data = {
-                id: editId,
-                name: document.getElementById('c-name').value,
-                phone: document.getElementById('c-phone').value,
-                notes: document.getElementById('c-notes').value
-            };
-            await send('Client', data);
-            if (isQuickClient) { isQuickClient = false; closeModal('modal-client'); openModal('modal-appt'); }
-        }
-
-        async function saveExpense() {
-            const data = { date: document.getElementById('e-date').value, category: document.getElementById('e-category').value, amount: document.getElementById('e-amount').value };
-            await send('Expense', data);
-        }
-
-        async function saveWaitlist() {
-            const data = { name: document.getElementById('w-name').value, phone: document.getElementById('w-phone').value, preferred_date: document.getElementById('w-date').value };
-            await send('Waitlist', data);
-        }
-
-        async function send(type, data) {
+        async function save(type) {
             tg.MainButton.showProgress();
-            const action = data.id ? `update${type}` : `add${type}`;
+            let data = {};
+            if (type === 'Appointment') {
+                const cSel = document.getElementById('appt-client');
+                data = { id: editId, status: document.getElementById('appt-status').value, client_id: cSel.value, client_name: cSel.options[cSel.selectedIndex].dataset.name, service: document.getElementById('appt-service').value, price: document.getElementById('appt-price').value, date: document.getElementById('appt-date').value, time: document.getElementById('appt-time').value };
+            } else if (type === 'Client') {
+                data = { id: editId, name: document.getElementById('c-name').value, phone: document.getElementById('c-phone').value, instagram: document.getElementById('c-instagram').value, notes: document.getElementById('c-notes').value };
+            } else if (type === 'Waitlist') {
+                data = { id: editId, name: document.getElementById('w-name').value, phone: document.getElementById('w-phone').value, service: document.getElementById('w-service').value, preferred_date: document.getElementById('w-preferred_date').value };
+            } else if (type === 'Expense') {
+                data = { date: document.getElementById('e-date').value, category: document.getElementById('e-category').value, amount: document.getElementById('e-amount').value };
+            }
+
+            const action = (data.id) ? `update${type}` : `add${type}`;
             await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...data }) });
             await loadData();
             closeModal(`modal-${type.toLowerCase()}`);
+            if (isQuickClient) { isQuickClient = false; openModal('modal-appt'); }
         }
 
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); tg.MainButton.hide(); editId = null; }
-        function closeDetails() { document.getElementById('modal-details').classList.add('hidden'); }
-        
-        function openQuickClient() { isQuickClient = true; document.getElementById('modal-appt').classList.add('hidden'); openModal('modal-client'); }
-        
+        function openEditWaitlist(id) {
+            const w = store.waitlist.find(i => String(i.id) === String(id));
+            editId = id;
+            document.getElementById('w-name').value = w.name;
+            document.getElementById('w-phone').value = w.phone;
+            document.getElementById('w-service').value = w.service;
+            document.getElementById('w-preferred_date').value = w.preferred_date;
+            document.getElementById('waitlist-actions').classList.remove('hidden');
+            openModal('modal-waitlist');
+        }
+
+        async function deleteWaitlist() {
+            if(confirm('Удалить клиента из очереди?')) {
+                tg.MainButton.showProgress();
+                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteWaitlist', id: editId }) });
+                await loadData();
+                closeModal('modal-waitlist');
+            }
+        }
+
         function openEditAppt(id) {
             const a = store.appointments.find(i => String(i.id) === String(id));
             editId = id;
@@ -408,9 +423,27 @@
             const c = store.clients.find(i => String(i.id) === String(editId));
             document.getElementById('c-name').value = c.name;
             document.getElementById('c-phone').value = c.phone;
-            document.getElementById('c-notes').value = c.notes;
+            document.getElementById('c-instagram').value = c.instagram || '';
+            document.getElementById('c-notes').value = c.notes || '';
             document.getElementById('modal-details').classList.add('hidden');
             openModal('modal-client');
+        }
+
+        function copyReminderText() {
+            const a = store.appointments.find(i => String(i.id) === String(editId));
+            const c = store.clients.find(i => String(i.id) === String(a.client_id));
+            // ИСПРАВЛЕНИЕ: Добавлен вид услуги в уведомление
+            const text = `Здравствуйте, ${c.name}! Напоминаю о вашей записи: ${fmtDate(a.date)} в ${a.time}. Услуга: ${a.service}. Подтвердите, пожалуйста, визит.`;
+            navigator.clipboard.writeText(text);
+            tg.showAlert('Текст уведомления скопирован!');
+        }
+
+        function toggleSleeping() {
+            showSleeping = !showSleeping;
+            const btn = document.getElementById('btn-sleeping');
+            btn.classList.toggle('bg-purple-100');
+            btn.classList.toggle('text-purple-600');
+            renderClients();
         }
 
         function switchTab(id) {
@@ -419,18 +452,20 @@
             document.getElementById(id).classList.remove('hidden');
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('nav-active'));
             document.querySelector(`[data-target="${id}"]`).classList.add('nav-active');
+            
+            const fab = document.getElementById('main-fab');
+            if(id === 'page-budget') fab.classList.add('hidden');
+            else fab.classList.remove('hidden');
+            
             tg.HapticFeedback.impactOccurred('light');
         }
 
-        function copyReminderText() {
-            const a = store.appointments.find(i => String(i.id) === String(editId));
-            const text = `Привет! Напоминаю о записи: ${fmtDate(a.date)} в ${a.time}. Жду тебя!`;
-            navigator.clipboard.writeText(text);
-            tg.showAlert('Текст скопирован!');
-        }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); tg.MainButton.hide(); editId = null; }
+        function closeDetails() { document.getElementById('modal-details').classList.add('hidden'); }
+        function openQuickClient() { isQuickClient = true; document.getElementById('modal-appt').classList.add('hidden'); openModal('modal-client'); }
 
         async function deleteAppt() {
-            if(confirm('Удалить?')) {
+            if(confirm('Удалить запись?')) {
                 tg.MainButton.showProgress();
                 await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteAppointment', id: editId }) });
                 await loadData();
