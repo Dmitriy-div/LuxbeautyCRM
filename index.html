@@ -3,184 +3,326 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Business CRM Pro</title>
+    <title>CRM Pro Ultimate</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background: #F3F4F6; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #F8F9FA; color: #1A1A1A; }
         .nav-active { color: #7C3AED; border-top: 2px solid #7C3AED; }
-        .time-slot { height: 40px; border-top: 1px solid #E5E7EB; position: relative; }
-        .appt-block { position: absolute; left: 60px; right: 10px; border-radius: 8px; padding: 4px 8px; font-size: 10px; font-weight: bold; overflow: hidden; }
-        .vip-badge { background: linear-gradient(45deg, #FFD700, #FFA500); color: black; font-size: 8px; padding: 2px 6px; border-radius: 4px; }
+        .page { animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Стили шкалы времени */
+        .time-grid-container { position: relative; background: white; border-radius: 1.5rem; padding: 10px; border: 1px solid #E5E7EB; }
+        .time-row { height: 50px; border-top: 1px solid #F3F4F6; position: relative; display: flex; align-items: center; }
+        .time-label { width: 50px; font-size: 10px; color: #9CA3AF; font-weight: bold; }
+        .appt-slot { 
+            position: absolute; left: 60px; right: 10px; 
+            background: #EDE9FE; color: #7C3AED; 
+            border-left: 4px solid #7C3AED; border-radius: 8px;
+            padding: 5px 10px; font-size: 11px; font-weight: 700;
+            z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex; align-items: center; overflow: hidden;
+        }
+        .vip-badge { background: linear-gradient(45deg, #F59E0B, #D97706); color: white; padding: 2px 6px; border-radius: 6px; font-size: 8px; text-transform: uppercase; }
     </style>
 </head>
-<body class="pb-24">
+<body class="pb-32">
 
-    <div id="page-home" class="page p-4">
-        <h1 class="text-xl font-bold mb-4">График на сегодня</h1>
-        
-        <div class="bg-white rounded-2xl p-4 shadow-sm mb-6">
-            <div id="time-grid" class="relative">
-                </div>
-        </div>
+    <div id="loader" class="fixed inset-0 bg-white z-[100] flex items-center justify-center">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
     </div>
 
-    <div id="page-clients" class="page p-4 hidden">
-        <div class="flex justify-between items-center mb-4">
-            <h1 class="text-xl font-bold">Клиенты</h1>
-            <button onclick="openAddClient()" class="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-bold">+ Клиент</button>
+    <div id="page-home" class="page p-5">
+        <h1 class="text-2xl font-black mb-6">Сегодня</h1>
+        
+        <div class="time-grid-container mb-6 shadow-sm">
+            <div id="time-grid-content" class="relative">
+                </div>
         </div>
+
+        <h3 class="font-bold text-gray-800 mb-4 ml-1 uppercase text-xs tracking-widest">Список записей</h3>
+        <div id="home-upcoming" class="space-y-3"></div>
+    </div>
+
+    <div id="page-calendar" class="page p-5 hidden">
+        <h1 class="text-2xl font-black mb-6">График</h1>
+        <div id="vertical-timeline" class="space-y-8"></div>
+    </div>
+
+    <div id="page-clients" class="page p-5 hidden">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-black">База</h1>
+            <button onclick="openClientModal()" class="bg-gray-900 text-white px-4 py-2 rounded-xl text-sm font-bold">+ Клиент</button>
+        </div>
+        <input type="text" id="client-search" oninput="renderClients()" placeholder="Поиск..." class="w-full bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 outline-none">
         <div id="clients-list" class="space-y-3"></div>
     </div>
 
-    <div id="page-expenses" class="page p-4 hidden">
-        <div class="flex justify-between items-center mb-4">
-            <h1 class="text-xl font-bold">Расходы</h1>
-            <button onclick="openAddExpense()" class="bg-red-500 text-white px-4 py-2 rounded-xl text-sm font-bold">+ Расход</button>
+    <div id="page-expenses" class="page p-5 hidden">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-black">Расходы</h1>
+            <button onclick="openExpenseModal()" class="bg-red-500 text-white px-4 py-2 rounded-xl text-sm font-bold">+ Расход</button>
         </div>
-        <div class="bg-white rounded-xl p-4 mb-4 text-center">
-            <p class="text-gray-400 text-xs uppercase">Всего за месяц</p>
-            <p id="total-expenses-month" class="text-2xl font-black text-red-500">0 ₽</p>
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-50 mb-6 text-center">
+            <p class="text-gray-400 text-[10px] font-bold uppercase mb-1">Траты в этом месяце</p>
+            <p id="total-expenses-display" class="text-3xl font-black text-red-500">0 ₽</p>
         </div>
         <div id="expenses-list" class="space-y-2"></div>
     </div>
 
-    <div id="page-stats" class="page p-4 hidden">
-        <h1 class="text-xl font-bold mb-4">Финансы</h1>
-        <div class="grid grid-cols-1 gap-4">
-            <div class="bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-3xl text-white shadow-lg">
-                <p class="text-xs opacity-80 uppercase font-bold">Чистая прибыль (Месяц)</p>
-                <h2 id="net-profit" class="text-3xl font-black">0 ₽</h2>
-                <p class="text-[10px] mt-2 opacity-70">* Выручка минус расходы на материалы и общие траты</p>
+    <div id="page-stats" class="page p-5 hidden">
+        <h1 class="text-2xl font-black mb-6">Финансы</h1>
+        <div class="bg-gradient-to-br from-green-500 to-emerald-600 p-8 rounded-[2.5rem] text-white shadow-xl mb-8">
+            <p class="text-green-100 text-[10px] font-bold uppercase tracking-widest mb-1">Чистая прибыль (мес)</p>
+            <h2 id="stat-net-profit" class="text-4xl font-black mb-4 text-white">0 ₽</h2>
+            <div class="flex justify-between border-t border-white/20 pt-4 text-[10px] font-bold uppercase">
+                <div><p class="opacity-70">Выручка</p><p id="stat-rev" class="text-sm">0 ₽</p></div>
+                <div class="text-right"><p class="opacity-70">Все расходы</p><p id="stat-all-costs" class="text-sm">0 ₽</p></div>
             </div>
         </div>
     </div>
 
-    <div id="modal-quick-client" class="fixed inset-0 z-[60] bg-black/50 hidden flex items-center justify-center p-6">
-        <div class="bg-white w-full rounded-3xl p-6">
-            <h3 class="font-bold mb-4">Быстрое добавление</h3>
-            <input id="q-name" placeholder="Имя" class="w-full bg-gray-100 p-4 rounded-xl mb-2">
-            <input id="q-phone" placeholder="Телефон" class="w-full bg-gray-100 p-4 rounded-xl mb-4">
-            <button onclick="saveQuickClient()" class="w-full bg-purple-600 text-white py-4 rounded-xl font-bold">Сохранить</button>
+    <div id="page-waitlist" class="page p-5 hidden">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-black">Очередь</h1>
+            <button onclick="openWaitlistModal()" class="bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-bold">+ В очередь</button>
+        </div>
+        <div id="waitlist-list" class="space-y-3"></div>
+    </div>
+
+    <div id="modal-client" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-client')"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7">
+            <h2 class="text-xl font-black mb-6">Клиент</h2>
+            <form id="form-client" class="space-y-4">
+                <input type="text" id="c-name" placeholder="Имя" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold">
+                <input type="tel" id="c-phone" placeholder="Телефон" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold">
+                <textarea id="c-notes" placeholder="Заметки..." class="w-full bg-gray-50 p-4 rounded-2xl h-24"></textarea>
+            </form>
         </div>
     </div>
 
-    <nav class="fixed bottom-0 left-0 w-full bg-white border-t flex justify-around py-3">
-        <button onclick="switchTab('page-home')" class="nav-btn nav-active" data-target="page-home"><i class="fas fa-clock"></i><p class="text-[8px]">Обзор</p></button>
-        <button onclick="switchTab('page-clients')" class="nav-btn text-gray-400" data-target="page-clients"><i class="fas fa-users"></i><p class="text-[8px]">База</p></button>
-        <button onclick="switchTab('page-expenses')" class="nav-btn text-gray-400" data-target="page-expenses"><i class="fas fa-wallet"></i><p class="text-[8px]">Траты</p></button>
-        <button onclick="switchTab('page-stats')" class="nav-btn text-gray-400" data-target="page-stats"><i class="fas fa-chart-line"></i><p class="text-[8px]">Финансы</p></button>
+    <div id="modal-expense" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-expense')"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7">
+            <h2 class="text-xl font-black mb-6">Новый расход</h2>
+            <form id="form-expense" class="space-y-4">
+                <input type="date" id="e-date" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold">
+                <select id="e-category" class="w-full bg-gray-50 p-4 rounded-2xl font-bold">
+                    <option value="Материалы">Материалы</option>
+                    <option value="Аренда">Аренда</option>
+                    <option value="Реклама">Реклама</option>
+                    <option value="Другое">Другое</option>
+                </select>
+                <input type="number" id="e-amount" placeholder="Сумма ₽" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold">
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-waitlist" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-waitlist')"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7">
+            <h2 class="text-xl font-black mb-6">Лист ожидания</h2>
+            <form id="form-waitlist" class="space-y-4">
+                <input type="text" id="w-name" placeholder="Имя" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold">
+                <input type="tel" id="w-phone" placeholder="Телефон" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold">
+                <input type="text" id="w-date" placeholder="Желаемая дата" class="w-full bg-gray-50 p-4 rounded-2xl font-bold">
+            </form>
+        </div>
+    </div>
+
+    <nav class="fixed bottom-0 left-0 w-full bg-white border-t flex justify-around py-4 pb-8 z-40">
+        <button onclick="switchTab('page-home')" class="nav-btn nav-active flex flex-col items-center w-1/5" data-target="page-home">
+            <i class="fas fa-home text-lg"></i><span class="text-[8px] font-bold uppercase mt-1">Дом</span>
+        </button>
+        <button onclick="switchTab('page-clients')" class="nav-btn text-gray-400 flex flex-col items-center w-1/5" data-target="page-clients">
+            <i class="fas fa-users text-lg"></i><span class="text-[8px] font-bold uppercase mt-1">База</span>
+        </button>
+        <button onclick="switchTab('page-expenses')" class="nav-btn text-gray-400 flex flex-col items-center w-1/5" data-target="page-expenses">
+            <i class="fas fa-wallet text-lg"></i><span class="text-[8px] font-bold uppercase mt-1">Траты</span>
+        </button>
+        <button onclick="switchTab('page-waitlist')" class="nav-btn text-gray-400 flex flex-col items-center w-1/5" data-target="page-waitlist">
+            <i class="fas fa-hourglass-half text-lg"></i><span class="text-[8px] font-bold uppercase mt-1">Лист</span>
+        </button>
+        <button onclick="switchTab('page-stats')" class="nav-btn text-gray-400 flex flex-col items-center w-1/5" data-target="page-stats">
+            <i class="fas fa-chart-line text-lg"></i><span class="text-[8px] font-bold uppercase mt-1">Касса</span>
+        </button>
     </nav>
 
     <script>
-        let store = { clients: [], appointments: [], expenses: [] };
-        const API_URL = "https://script.google.com/macros/s/AKfycbwqL4BpcnwbXb68rdvdoCpLA-LuGPoEuqdm2MEiLjLMOzCpMb9KvVseWM2J6-UkpkpB7g/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbyMIavBER8Scm2TApiVvEEp3rcVcMQ4d_OJEkJRQX6uaCKJZDlXfHNYIMG5Y8pW9nadRA/exec";
+        const tg = window.Telegram.WebApp;
+        let store = { clients: [], appointments: [], expenses: [], waitlist: [] };
+
+        document.addEventListener('DOMContentLoaded', () => { tg.expand(); loadData(); });
 
         async function loadData() {
-            const res = await fetch(API_URL + "?action=getData");
-            store = await res.json();
-            renderAll();
+            try {
+                const res = await fetch(`${API_URL}?action=getData`);
+                store = await res.json();
+                document.getElementById('loader').classList.add('hidden');
+                refreshUI();
+            } catch (e) { console.error(e); }
         }
 
-        function renderAll() {
+        function refreshUI() {
             renderTimeGrid();
+            renderDashboardList();
             renderClients();
             renderExpenses();
             renderStats();
+            renderWaitlist();
         }
 
-        // 1. Рендер шкалы времени
+        // Шкала времени (Time Grid)
         function renderTimeGrid() {
-            const grid = document.getElementById('time-grid');
-            grid.innerHTML = '';
+            const container = document.getElementById('time-grid-content');
+            container.innerHTML = '';
             const today = new Date().toISOString().split('T')[0];
-            const dayAppts = store.appointments.filter(a => a.date === today && a.status !== 'cancelled');
+            const dayAppts = store.appointments.filter(a => a.date.includes(today) && a.status !== 'cancelled');
 
-            for (let h = 8; h <= 21; h++) {
-                grid.innerHTML += `
-                    <div class="time-slot">
-                        <span class="absolute -top-2 left-0 text-[10px] text-gray-400 font-bold">${h}:00</span>
+            // Рисуем сетку 9:00 - 21:00
+            for (let h = 9; h <= 21; h++) {
+                container.innerHTML += `
+                    <div class="time-row">
+                        <span class="time-label">${h}:00</span>
                     </div>
                 `;
             }
 
+            // Накладываем записи
             dayAppts.forEach(a => {
                 const hour = parseInt(a.time.split(':')[0]);
                 const min = parseInt(a.time.split(':')[1]);
-                const top = (hour - 8) * 40 + (min / 60) * 40;
-                grid.innerHTML += `
-                    <div class="appt-block bg-purple-100 text-purple-700 border-l-4 border-purple-600 shadow-sm" style="top: ${top}px; height: 38px;">
-                        ${a.time} - ${a.client_name}
-                    </div>
-                `;
+                if (hour >= 9 && hour <= 21) {
+                    const topOffset = (hour - 9) * 50 + (min / 60) * 50;
+                    container.innerHTML += `
+                        <div class="appt-slot" style="top: ${topOffset}px; height: 45px;">
+                            ${a.time} | ${a.client_name}
+                        </div>
+                    `;
+                }
             });
         }
 
-        // 2. Клиенты с LTV и VIP статусами
-        function renderClients() {
-            const list = document.getElementById('clients-list');
-            list.innerHTML = store.clients.sort((a,b) => b.ltv - a.ltv).map(c => `
-                <div class="bg-white p-4 rounded-2xl flex justify-between items-center shadow-sm">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <p class="font-bold">${c.name}</p>
-                            <span class="vip-badge">${c.status_label}</span>
-                        </div>
-                        <p class="text-[10px] text-gray-400">${c.phone}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-xs font-black text-purple-600">${c.ltv.toLocaleString()} ₽</p>
-                        <p class="text-[8px] text-gray-400 uppercase">Всего покупок</p>
-                    </div>
+        function renderDashboardList() {
+            const today = new Date().toISOString().split('T')[0];
+            const list = store.appointments.filter(a => a.date.includes(today));
+            document.getElementById('home-upcoming').innerHTML = list.map(a => `
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-50 flex justify-between">
+                    <div><p class="font-bold text-sm">${a.client_name}</p><p class="text-[10px] text-purple-600">${a.time} - ${a.service}</p></div>
+                    <p class="font-black text-sm">${a.price} ₽</p>
                 </div>
-            `).join('');
+            `).join('') || '<p class="text-center text-gray-300 py-10 text-xs">Нет записей</p>';
         }
 
-        // 3. Расходы
+        function renderClients() {
+            const term = document.getElementById('client-search').value.toLowerCase();
+            document.getElementById('clients-list').innerHTML = store.clients
+                .filter(c => c.name.toLowerCase().includes(term))
+                .map(c => `
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-50 flex justify-between items-center">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <p class="font-bold">${c.name}</p>
+                                <span class="vip-badge">${c.status_label}</span>
+                            </div>
+                            <p class="text-xs text-gray-400">${c.phone}</p>
+                        </div>
+                        <p class="font-black text-purple-600 text-sm">${c.ltv} ₽</p>
+                    </div>
+                `).join('');
+        }
+
         function renderExpenses() {
-            const list = document.getElementById('expenses-list');
             const currentMonth = new Date().getMonth();
-            const monthlyExp = store.expenses.filter(e => new Date(e.date).getMonth() === currentMonth);
-            const total = monthlyExp.reduce((s, e) => s + Number(e.amount), 0);
-            
-            document.getElementById('total-expenses-month').innerText = total.toLocaleString() + ' ₽';
-            list.innerHTML = monthlyExp.map(e => `
-                <div class="bg-white p-3 rounded-xl flex justify-between text-sm">
-                    <span class="text-gray-500">${e.date}</span>
+            const monthly = store.expenses.filter(e => new Date(e.date).getMonth() === currentMonth);
+            const total = monthly.reduce((s, e) => s + Number(e.amount), 0);
+            document.getElementById('total-expenses-display').innerText = total.toLocaleString() + ' ₽';
+            document.getElementById('expenses-list').innerHTML = monthly.map(e => `
+                <div class="bg-white p-3 rounded-xl flex justify-between text-xs">
+                    <span class="text-gray-400">${e.date}</span>
                     <span class="font-bold">${e.category}</span>
                     <span class="text-red-500 font-bold">-${e.amount} ₽</span>
                 </div>
             `).join('');
         }
 
-        // 4. Финансы (Чистая прибыль)
-        function renderStats() {
-            const currentMonth = new Date().getMonth();
-            const monthlyAppts = store.appointments.filter(a => a.status === 'completed' && new Date(a.date).getMonth() === currentMonth);
-            const rev = monthlyAppts.reduce((s, a) => s + Number(a.price), 0);
-            const materialCosts = monthlyAppts.reduce((s, a) => s + Number(a.costs || 0), 0);
-            const generalExpenses = store.expenses.filter(e => new Date(e.date).getMonth() === currentMonth).reduce((s, e) => s + Number(e.amount), 0);
-            
-            const net = rev - materialCosts - generalExpenses;
-            document.getElementById('net-profit').innerText = net.toLocaleString() + ' ₽';
+        function renderWaitlist() {
+            document.getElementById('waitlist-list').innerHTML = store.waitlist.map(w => `
+                <div class="bg-white p-4 rounded-2xl shadow-sm border-l-4 border-purple-500">
+                    <p class="font-bold text-sm">${w.name}</p>
+                    <p class="text-xs text-gray-400">${w.phone}</p>
+                    <p class="text-[10px] text-purple-600 mt-2 font-bold uppercase italic">${w.preferred_date || 'Любая дата'}</p>
+                </div>
+            `).join('') || '<p class="text-center text-gray-300 py-10 text-xs">Очередь пуста</p>';
         }
 
-        // Функции для быстрой работы
+        function renderStats() {
+            const currentMonth = new Date().getMonth();
+            const monthAppts = store.appointments.filter(a => new Date(a.date).getMonth() === currentMonth && a.status !== 'cancelled');
+            const rev = monthAppts.reduce((s, a) => s + Number(a.price), 0);
+            const apptCosts = monthAppts.reduce((s, a) => s + Number(a.costs || 0), 0);
+            const genExpenses = store.expenses.filter(e => new Date(e.date).getMonth() === currentMonth).reduce((s, e) => s + Number(e.amount), 0);
+            
+            const totalOut = apptCosts + genExpenses;
+            document.getElementById('stat-rev').innerText = rev.toLocaleString() + ' ₽';
+            document.getElementById('stat-all-costs').innerText = totalOut.toLocaleString() + ' ₽';
+            document.getElementById('stat-net-profit').innerText = (rev - totalOut).toLocaleString() + ' ₽';
+        }
+
+        // Логика переключения вкладок
         function switchTab(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('nav-active', 'text-gray-400'));
-            // ... логика подсветки
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.replace('nav-active', 'text-gray-400'));
+            document.querySelector(`[data-target="${id}"]`).classList.replace('text-gray-400', 'nav-active');
+            tg.HapticFeedback.impactOccurred('light');
         }
 
-        async function saveQuickClient() {
-            const data = { name: document.getElementById('q-name').value, phone: document.getElementById('q-phone').value };
-            // Отправка на сервер и обновление списка в селекторе записи
-            await fetch(API_URL, {method:'POST', body: JSON.stringify({action:'addClient', ...data})});
-            document.getElementById('modal-quick-client').classList.add('hidden');
-            loadData();
+        // Модалки
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            tg.MainButton.setText("СОХРАНИТЬ").show().onClick(() => {
+                if(id === 'modal-client') submitForm('addClient', 'form-client');
+                if(id === 'modal-expense') submitForm('addExpense', 'form-expense');
+                if(id === 'modal-waitlist') submitForm('addToWaitlist', 'form-waitlist');
+            });
         }
+
+        async function submitForm(action, formId) {
+            const form = document.getElementById(formId);
+            const fd = new FormData(form);
+            const data = {};
+            // Превращаем поля формы в объект для отправки
+            if(formId === 'form-client') {
+                data.name = document.getElementById('c-name').value;
+                data.phone = document.getElementById('c-phone').value;
+                data.notes = document.getElementById('c-notes').value;
+            } else if(formId === 'form-expense') {
+                data.date = document.getElementById('e-date').value;
+                data.category = document.getElementById('e-category').value;
+                data.amount = document.getElementById('e-amount').value;
+            } else if(formId === 'form-waitlist') {
+                data.name = document.getElementById('w-name').value;
+                data.phone = document.getElementById('w-phone').value;
+                data.preferred_date = document.getElementById('w-date').value;
+            }
+
+            tg.MainButton.showProgress();
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...data }) });
+            await loadData();
+            closeModal(formId.replace('form-', 'modal-'));
+            tg.MainButton.hide();
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); tg.MainButton.hide(); }
+        function openClientModal() { openModal('modal-client'); }
+        function openExpenseModal() { openModal('modal-expense'); }
+        function openWaitlistModal() { openModal('modal-waitlist'); }
     </script>
 </body>
 </html>
