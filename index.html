@@ -55,13 +55,20 @@
         </div>
         <div class="relative mb-6">
             <i class="fas fa-search absolute left-4 top-4 text-gray-300 text-sm"></i>
-            <input type="text" id="client-search" placeholder="Поиск по имени..." class="w-full bg-white p-4 pl-12 rounded-2xl shadow-sm border border-gray-100 outline-none text-sm">
+            <input type="text" id="client-search" placeholder="Поиск по имени или телефону..." class="w-full bg-white p-4 pl-12 rounded-2xl shadow-sm border border-gray-100 outline-none text-sm">
         </div>
         <div id="clients-list" class="space-y-3"></div>
     </div>
 
     <div id="page-stats" class="page p-5 hidden">
-        <h1 class="text-2xl font-black mb-6">Отчеты</h1>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-black">Отчеты</h1>
+            <select id="stats-period" onchange="renderStats()" class="bg-white border-none text-xs font-bold uppercase text-purple-600 outline-none">
+                <option value="current">Этот месяц</option>
+                <option value="prev">Прошлый месяц</option>
+                <option value="all">Все время</option>
+            </select>
+        </div>
         <div class="grid grid-cols-2 gap-4 mb-6">
             <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-50">
                 <p class="text-gray-400 text-[9px] font-bold uppercase mb-1 tracking-widest">Чистый доход</p>
@@ -73,7 +80,7 @@
             </div>
         </div>
         <div class="bg-white p-7 rounded-[2.5rem] shadow-sm">
-            <h4 class="font-bold text-sm mb-5 text-gray-800 uppercase tracking-tighter">Популярные услуги</h4>
+            <h4 class="font-bold text-sm mb-5 text-gray-800 uppercase tracking-tighter text-center">Топ услуг за период</h4>
             <div id="top-services" class="space-y-4 text-sm font-bold"></div>
         </div>
     </div>
@@ -162,13 +169,18 @@
     </nav>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbz6wgmBYevBLhjjNKN7HJy3KF7_9vhuuwax6VxnK1ZgVUazEEkvnbV_-BFaBU5W83ETmg/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbz9z_ReGP6HFJcUT0jeW5WAIoyMRqpx52u2DtTs7AXXfaW7Tiaw6in65Kv6TlhrlI_t4Q/exec";
         const tg = window.Telegram.WebApp;
-        let store = { clients: [], appointments: [], services: [] };
+        let store = JSON.parse(localStorage.getItem('crm_data')) || { clients: [], appointments: [], services: [] };
         let currentEditId = null;
         let currentClientEditId = null;
 
-        document.addEventListener('DOMContentLoaded', () => { loadData(); tg.expand(); setupPhoneInput(); });
+        document.addEventListener('DOMContentLoaded', () => { 
+            tg.expand(); 
+            setupPhoneInput();
+            if (store.clients.length > 0) refreshUI(); // Быстрый показ из кэша
+            loadData(); 
+        });
 
         function setupPhoneInput() {
             const phoneInput = document.getElementById('c-phone');
@@ -180,15 +192,24 @@
             try {
                 const res = await fetch(`${API_URL}?action=getData`);
                 store = await res.json();
+                localStorage.setItem('crm_data', JSON.stringify(store)); // Обновляем кэш
                 document.getElementById('loader').classList.add('hidden');
                 refreshUI();
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error(e);
+                tg.showAlert("Ошибка соединения с сервером");
+            }
         }
 
         async function sendData(action, payload) {
             tg.MainButton.showProgress();
-            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...payload }) });
-            await loadData();
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...payload }) });
+                if (res.ok) {
+                    tg.HapticFeedback.notificationOccurred('success');
+                    await loadData();
+                }
+            } catch (e) { tg.showAlert("Не удалось сохранить данные"); }
             tg.MainButton.hideProgress();
         }
 
@@ -200,6 +221,7 @@
             populateSelects();
         }
 
+        // ... [Функции findFreeSlots, renderCalendar, renderDashboard остаются из оригинала] ...
         function findFreeSlots() {
             const today = new Date().toISOString().split('T')[0];
             const busy = store.appointments.filter(a => a.date.includes(today) && a.status !== 'cancelled').map(a => a.time);
@@ -263,25 +285,73 @@
         function renderClients() {
             const term = document.getElementById('client-search').value.toLowerCase();
             const cont = document.getElementById('clients-list');
-            cont.innerHTML = store.clients.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term)).map(c => `
-                <div onclick="showDetails('${c.id}')" class="bg-white p-4 rounded-3xl shadow-sm border border-gray-50 flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-black text-xl">${c.name[0]}</div>
-                        <div><p class="font-black text-sm text-gray-900">${c.name}</p><p class="text-[10px] text-gray-400 font-bold">${c.phone}</p></div>
+            cont.innerHTML = store.clients.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term)).map(c => {
+                // Подсчет визитов для бейджа "Частый клиент"
+                const visits = store.appointments.filter(a => a.client_id == c.id && a.status === 'confirmed').length;
+                return `
+                    <div onclick="showDetails('${c.id}')" class="bg-white p-4 rounded-3xl shadow-sm border border-gray-50 flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-black text-xl">${c.name[0]}</div>
+                            <div>
+                                <p class="font-black text-sm text-gray-900">${c.name}</p>
+                                <p class="text-[10px] text-gray-400 font-bold">${c.phone}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${visits > 3 ? '<span class="bg-amber-100 text-amber-600 text-[8px] font-black px-2 py-1 rounded-lg uppercase">VIP</span>' : ''}
+                            <i class="fas fa-chevron-right text-gray-100"></i>
+                        </div>
                     </div>
-                    ${c.notes ? '<div class="bg-amber-100 text-amber-600 w-7 h-7 rounded-xl flex items-center justify-center text-xs"><i class="fas fa-sticky-note"></i></div>' : '<i class="fas fa-chevron-right text-gray-100"></i>'}
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
         document.getElementById('client-search').oninput = renderClients;
 
+        function renderStats() {
+            const period = document.getElementById('stats-period').value;
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            let filtered = store.appointments.filter(a => a.status !== 'cancelled');
+
+            if (period === 'current') {
+                filtered = filtered.filter(a => {
+                    const d = new Date(a.date);
+                    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+                });
+            } else if (period === 'prev') {
+                filtered = filtered.filter(a => {
+                    const d = new Date(a.date);
+                    const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+                    const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+                    return d.getMonth() === prevMonth && d.getFullYear() === prevYear;
+                });
+            }
+
+            const rev = filtered.reduce((s,a) => s + Number(a.price), 0);
+            const costs = filtered.reduce((s,a) => s + Number(a.costs || 0), 0);
+            
+            document.getElementById('stat-net-profit').innerText = (rev - costs).toLocaleString() + ' ₽';
+            document.getElementById('stat-margin').innerText = rev ? Math.round(((rev-costs)/rev)*100) + '%' : '0%';
+            
+            const svcs = {};
+            filtered.forEach(a => svcs[a.service] = (svcs[a.service] || 0) + 1);
+            document.getElementById('top-services').innerHTML = Object.entries(svcs).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,c])=>`
+                <div class="flex justify-between items-center bg-gray-50 p-4 rounded-2xl mb-2">
+                    <span class="text-xs">${n}</span>
+                    <span class="text-purple-600 font-black">${c}</span>
+                </div>
+            `).join('') || '<p class="text-center text-gray-300 text-[10px] py-4">Нет данных</p>';
+        }
+
+        // ... [Остальные функции: showDetails, sendRemind, openModal, closeModal и т.д.] ...
         function showDetails(id) {
             const c = store.clients.find(c => c.id == id);
             currentClientEditId = id;
             document.getElementById('det-name').innerText = c.name;
             const cleanPhone = c.phone.replace(/\D/g, '');
             
-            // ИСПРАВЛЕНИЕ ВАЙБЕР И ВАТСАП В ДЕТАЛЯХ ЧЕРЕЗ tg.openLink
             document.getElementById('det-viber').onclick = () => tg.openLink(`viber://chat?number=${cleanPhone}`);
             document.getElementById('det-wa').onclick = () => tg.openLink(`https://wa.me/${cleanPhone}`);
             document.getElementById('det-call').onclick = () => tg.openLink(`tel:${c.phone}`);
@@ -300,33 +370,14 @@
             document.getElementById('modal-details').classList.remove('hidden');
         }
 
-        // ИСПРАВЛЕНИЕ ОТПРАВКИ НАПОМИНАНИЙ ЧЕРЕЗ tg.openLink
         function sendRemind(type) {
             const a = store.appointments.find(i => i.id == currentEditId);
             const c = store.clients.find(i => i.id == a.client_id);
             const date = new Date(a.date).toLocaleDateString('ru', {day:'numeric', month:'long'});
             const text = `Привет, ${c.name}! Напоминаю о нашей записи: ${date} в ${a.time}. Жду тебя!`;
             const phone = c.phone.replace(/\D/g, '');
-            
-            let url = (type === 'viber') 
-                ? `viber://forward?text=${encodeURIComponent(text)}` 
-                : `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
-            
+            let url = (type === 'viber') ? `viber://forward?text=${encodeURIComponent(text)}` : `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
             tg.openLink(url);
-        }
-
-        function renderStats() {
-            const appts = store.appointments.filter(a => a.status !== 'cancelled');
-            const rev = appts.reduce((s,a) => s + Number(a.price), 0);
-            const costs = appts.reduce((s,a) => s + Number(a.costs || 0), 0);
-            document.getElementById('stat-net-profit').innerText = (rev - costs).toLocaleString() + ' ₽';
-            document.getElementById('stat-margin').innerText = rev ? Math.round(((rev-costs)/rev)*100) + '%' : '0%';
-            
-            const svcs = {};
-            appts.forEach(a => svcs[a.service] = (svcs[a.service] || 0) + 1);
-            document.getElementById('top-services').innerHTML = Object.entries(svcs).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([n,c])=>`
-                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl mb-2"><span>${n}</span><span class="text-purple-600">${c}</span></div>
-            `).join('');
         }
 
         function populateSelects() {
@@ -388,7 +439,7 @@
         function closeDetails() { document.getElementById('modal-details').classList.add('hidden'); }
         function fastAddAppt(ds) { document.getElementById('appt-date').value = ds; document.getElementById('appt-edit-actions').classList.add('hidden'); document.getElementById('appt-reminders').classList.add('hidden'); openModal('modal-appt'); }
         async function handleStatus(act) { if(confirm('Удалить эту запись?')) { await sendData(act, {id: currentEditId}); closeModal('modal-appt'); } }
-        
+
         function switchTab(id) {
             document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
             document.getElementById(id).classList.remove('hidden');
