@@ -61,14 +61,7 @@
     </div>
 
     <div id="page-stats" class="page p-5 hidden">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-black">Отчеты</h1>
-            <select id="stats-period" onchange="renderStats()" class="bg-white border-none text-xs font-bold uppercase text-purple-600 outline-none">
-                <option value="current">Этот месяц</option>
-                <option value="prev">Прошлый месяц</option>
-                <option value="all">Все время</option>
-            </select>
-        </div>
+        <h1 class="text-2xl font-black mb-6">Отчеты</h1>
         <div class="grid grid-cols-2 gap-4 mb-6">
             <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-50">
                 <p class="text-gray-400 text-[9px] font-bold uppercase mb-1 tracking-widest">Чистый доход</p>
@@ -80,7 +73,7 @@
             </div>
         </div>
         <div class="bg-white p-7 rounded-[2.5rem] shadow-sm">
-            <h4 class="font-bold text-sm mb-5 text-gray-800 uppercase tracking-tighter text-center">Топ услуг</h4>
+            <h4 class="font-bold text-sm mb-5 text-gray-800 uppercase tracking-tighter">Топ услуг</h4>
             <div id="top-services" class="space-y-4 text-sm font-bold"></div>
         </div>
     </div>
@@ -129,7 +122,7 @@
             <form id="form-client" class="space-y-4">
                 <input type="text" id="c-name" placeholder="Имя Фамилия" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
                 <input type="tel" id="c-phone" placeholder="Телефон" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
-                <input type="text" id="c-inst" placeholder="Instagram / Соцсеть" class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
+                <input type="text" id="c-inst" placeholder="Instagram" class="w-full bg-gray-50 p-4 rounded-2xl font-bold outline-none">
                 <textarea id="c-notes" placeholder="Заметки..." class="w-full bg-gray-50 p-4 rounded-2xl font-medium outline-none h-28"></textarea>
                 <div class="h-10"></div>
             </form>
@@ -171,22 +164,16 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbwLDrf-VwBLWrYLPQcUwDDt3vjSUSp0otMERHXwYYmsb-ewGVXpH8y0B9LB2aw4Of7NTg/exec";
         const tg = window.Telegram.WebApp;
-        let store = JSON.parse(localStorage.getItem('crm_data')) || { clients: [], appointments: [], services: [] };
+        let store = { clients: [], appointments: [], services: [] };
         let currentEditId = null;
         let currentClientEditId = null;
 
-        document.addEventListener('DOMContentLoaded', () => { 
-            tg.expand(); 
-            if (store.clients.length > 0) refreshUI(); 
-            loadData(); 
-        });
+        document.addEventListener('DOMContentLoaded', () => { loadData(); tg.expand(); });
 
         async function loadData() {
             try {
                 const res = await fetch(`${API_URL}?action=getData`);
-                const newData = await res.json();
-                store = newData;
-                localStorage.setItem('crm_data', JSON.stringify(store));
+                store = await res.json();
                 document.getElementById('loader').classList.add('hidden');
                 refreshUI();
             } catch (e) { console.error(e); }
@@ -196,14 +183,13 @@
             tg.MainButton.showProgress();
             try {
                 await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...payload }) });
-                // Пауза, чтобы Google успел сохранить данные
                 setTimeout(async () => {
                     await loadData();
                     tg.HapticFeedback.notificationOccurred('success');
                     tg.MainButton.hideProgress();
                 }, 1200);
             } catch (e) { 
-                tg.showAlert("Данные отправлены. Обновляю..."); 
+                tg.showAlert("Обновляю данные...");
                 setTimeout(() => location.reload(), 500);
             }
         }
@@ -224,9 +210,8 @@
                 const d = new Date(); d.setDate(today.getDate() + i);
                 const ds = d.toISOString().split('T')[0];
                 const dayAppts = store.appointments.filter(a => a.date && a.date.split('T')[0] === ds).sort((a,b) => a.time.localeCompare(b.time));
-                
                 cont.innerHTML += `
-                    <div class="mb-6">
+                    <div class="mb-4">
                         <div class="flex justify-between items-center mb-3 px-1">
                             <span class="font-bold text-gray-400 text-[10px] uppercase tracking-widest">${d.toLocaleDateString('ru',{weekday:'short', day:'numeric', month:'short'})}</span>
                             <button onclick="fastAddAppt('${ds}')" class="text-purple-600 text-[10px] font-black uppercase">+ ЗАПИСЬ</button>
@@ -237,11 +222,11 @@
                                     <div>
                                         <p class="text-[10px] font-black ${a.status=='cancelled'?'text-gray-300':'text-purple-600'}">${a.time}</p>
                                         <p class="font-bold text-sm text-gray-800">${a.client_name}</p>
-                                        <p class="text-[9px] text-gray-400 font-bold uppercase">${a.service}</p>
+                                        <p class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">${a.service}</p>
                                     </div>
                                     <p class="font-black text-sm text-gray-900">${a.price} ₽</p>
                                 </div>
-                            `).join('') || '<div class="p-5 border-2 border-dashed border-gray-100 rounded-[2rem] text-center text-[10px] text-gray-300 font-bold uppercase">Свободно</div>'}
+                            `).join('') || '<div class="p-6 border-2 border-dashed border-gray-100 rounded-[2rem] text-center text-[10px] text-gray-300 font-bold uppercase tracking-widest">Нет записей</div>'}
                         </div>
                     </div>`;
             }
@@ -254,7 +239,7 @@
             const costs = todayAppts.reduce((s,a) => s + Number(a.costs || 0), 0);
             document.getElementById('today-profit').innerText = (rev - costs).toLocaleString() + ' ₽';
             document.getElementById('today-rev-sub').innerText = `Выручка: ${rev} ₽ | Расход: ${costs} ₽`;
-            document.getElementById('home-upcoming').innerHTML = todayAppts.slice(0,5).map(a => `
+            document.getElementById('home-upcoming').innerHTML = todayAppts.slice(0,4).map(a => `
                 <div onclick="openEditAppt('${a.id}')" class="bg-white p-5 rounded-[1.5rem] shadow-sm flex justify-between items-center border border-gray-50">
                     <div class="flex items-center gap-4">
                         <div class="w-2 h-2 rounded-full ${a.status == 'confirmed' ? 'bg-green-500' : 'bg-amber-500'} shadow-sm"></div>
@@ -263,7 +248,7 @@
                     </div>
                     <i class="fas fa-chevron-right text-gray-200 text-xs"></i>
                 </div>
-            `).join('') || '<div class="text-center p-10 bg-white rounded-[2.5rem] text-gray-300 text-xs font-bold uppercase">На сегодня пусто</div>';
+            `).join('') || '<div class="text-center p-12 bg-white rounded-[2.5rem] text-gray-300 text-xs font-bold uppercase tracking-widest">Пусто</div>';
         }
 
         function renderClients() {
@@ -272,11 +257,8 @@
             cont.innerHTML = store.clients.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term)).map(c => `
                 <div onclick="showDetails('${c.id}')" class="bg-white p-4 rounded-3xl shadow-sm border border-gray-50 flex items-center justify-between">
                     <div class="flex items-center gap-4">
-                        <div class="w-11 h-11 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-black">${c.name[0]}</div>
-                        <div>
-                            <p class="font-black text-sm text-gray-900">${c.name}</p>
-                            <p class="text-[10px] text-gray-400 font-bold">${c.phone}</p>
-                        </div>
+                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center font-black">${c.name[0]}</div>
+                        <div><p class="font-black text-sm text-gray-900">${c.name}</p><p class="text-[10px] text-gray-400 font-bold">${c.phone}</p></div>
                     </div>
                     <i class="fas fa-chevron-right text-gray-100"></i>
                 </div>
@@ -284,30 +266,38 @@
         }
         document.getElementById('client-search').oninput = renderClients;
 
+        async function sendRemind(type) {
+            const a = store.appointments.find(i => i.id == currentEditId);
+            const c = store.clients.find(i => i.id == a.client_id);
+            const dateObj = new Date(a.date);
+            const formattedDate = dateObj.toLocaleDateString('ru', {day:'numeric', month:'long'});
+            
+            const text = `Привет, ${c.name}! Напоминаю о нашей записи на "${a.service}": ${formattedDate} в ${a.time}. Жду тебя!`;
+            const phone = c.phone.replace(/\D/g, '');
+
+            try {
+                await navigator.clipboard.writeText(text);
+                tg.HapticFeedback.notificationOccurred('success');
+            } catch (err) { console.error('Clipboard error', err); }
+
+            let url = (type === 'viber') 
+                ? `viber://chat?number=${phone}&draft=${encodeURIComponent(text)}` 
+                : `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+            
+            tg.openLink(url);
+        }
+
         function renderStats() {
-            const period = document.getElementById('stats-period').value;
-            const now = new Date();
-            let filtered = store.appointments.filter(a => a.status !== 'cancelled');
-
-            if (period === 'current') {
-                filtered = filtered.filter(a => new Date(a.date).getMonth() === now.getMonth());
-            } else if (period === 'prev') {
-                filtered = filtered.filter(a => new Date(a.date).getMonth() === (now.getMonth() - 1));
-            }
-
-            const rev = filtered.reduce((s,a) => s + Number(a.price), 0);
-            const costs = filtered.reduce((s,a) => s + Number(a.costs || 0), 0);
+            const appts = store.appointments.filter(a => a.status !== 'cancelled');
+            const rev = appts.reduce((s,a) => s + Number(a.price), 0);
+            const costs = appts.reduce((s,a) => s + Number(a.costs || 0), 0);
             document.getElementById('stat-net-profit').innerText = (rev - costs).toLocaleString() + ' ₽';
             document.getElementById('stat-margin').innerText = rev ? Math.round(((rev-costs)/rev)*100) + '%' : '0%';
-            
             const svcs = {};
-            filtered.forEach(a => svcs[a.service] = (svcs[a.service] || 0) + 1);
+            appts.forEach(a => svcs[a.service] = (svcs[a.service] || 0) + 1);
             document.getElementById('top-services').innerHTML = Object.entries(svcs).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([n,c])=>`
-                <div class="flex justify-between items-center bg-gray-50 p-4 rounded-2xl">
-                    <span class="text-xs">${n}</span>
-                    <span class="text-purple-600 font-black">${c}</span>
-                </div>
-            `).join('') || '<p class="text-center text-gray-300 text-xs py-4">Нет данных</p>';
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl mb-2"><span class="text-xs">${n}</span><span class="text-purple-600 font-black">${c}</span></div>
+            `).join('');
         }
 
         function populateSelects() {
@@ -315,14 +305,6 @@
             const sS = document.getElementById('appt-service');
             cS.innerHTML = store.clients.map(c => `<option value="${c.id}" data-name="${c.name}">${c.name}</option>`).join('');
             sS.innerHTML = store.services.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
-        }
-
-        function switchTab(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.replace('nav-active', 'text-gray-300'));
-            document.querySelector(`[data-target="${id}"]`).classList.replace('text-gray-300', 'nav-active');
-            tg.HapticFeedback.impactOccurred('light');
         }
 
         function openModal(id) {
@@ -336,6 +318,34 @@
         }
 
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); tg.MainButton.hide(); currentEditId = null; currentClientEditId = null; }
+        
+        function openEditAppt(id) {
+            const a = store.appointments.find(i => i.id == id);
+            currentEditId = id;
+            document.getElementById('appt-status').value = a.status;
+            document.getElementById('appt-client').value = a.client_id;
+            document.getElementById('appt-service').value = a.service;
+            document.getElementById('appt-price').value = a.price;
+            document.getElementById('appt-costs').value = a.costs || 0;
+            document.getElementById('appt-date').value = a.date.split('T')[0];
+            document.getElementById('appt-time').value = a.time;
+            document.getElementById('appt-edit-actions').classList.remove('hidden');
+            document.getElementById('appt-reminders').classList.remove('hidden');
+            openModal('modal-appt');
+        }
+
+        function openClientModal() { document.getElementById('form-client').reset(); openModal('modal-client'); }
+        function editCurrentClient() { closeDetails(); openModal('modal-client'); }
+        function showDetails(id) {
+            const c = store.clients.find(c => c.id == id);
+            currentClientEditId = id;
+            document.getElementById('det-name').innerText = c.name;
+            const phone = c.phone.replace(/\D/g, '');
+            document.getElementById('det-viber').onclick = () => tg.openLink(`viber://chat?number=${phone}`);
+            document.getElementById('det-wa').onclick = () => tg.openLink(`https://wa.me/${phone}`);
+            document.getElementById('det-call').onclick = () => tg.openLink(`tel:${c.phone}`);
+            document.getElementById('modal-details').classList.remove('hidden');
+        }
 
         document.getElementById('form-appt').onsubmit = async (e) => {
             e.preventDefault();
@@ -352,45 +362,17 @@
             closeModal('modal-client');
         };
 
-        function openEditAppt(id) {
-            const a = store.appointments.find(i => i.id == id);
-            currentEditId = id;
-            document.getElementById('appt-status').value = a.status;
-            document.getElementById('appt-client').value = a.client_id;
-            document.getElementById('appt-service').value = a.service;
-            document.getElementById('appt-price').value = a.price;
-            document.getElementById('appt-costs').value = a.costs || 0;
-            document.getElementById('appt-date').value = a.date.split('T')[0];
-            document.getElementById('appt-time').value = a.time;
-            document.getElementById('appt-edit-actions').classList.remove('hidden');
-            document.getElementById('appt-reminders').classList.remove('hidden');
-            openModal('modal-appt');
-        }
-
-        function showDetails(id) {
-            const c = store.clients.find(c => c.id == id);
-            currentClientEditId = id;
-            document.getElementById('det-name').innerText = c.name;
-            const phone = c.phone.replace(/\D/g, '');
-            document.getElementById('det-viber').onclick = () => tg.openLink(`viber://chat?number=${phone}`);
-            document.getElementById('det-wa').onclick = () => tg.openLink(`https://wa.me/${phone}`);
-            document.getElementById('det-call').onclick = () => tg.openLink(`tel:${c.phone}`);
-            
-            const history = store.appointments.filter(a => a.client_id == id).sort((a,b) => b.date.localeCompare(a.date));
-            document.getElementById('det-history').innerHTML = history.map(a => `
-                <div class="bg-gray-50 p-4 rounded-2xl flex justify-between items-center text-xs">
-                    <div><p class="font-black">${new Date(a.date).toLocaleDateString('ru')}</p><p class="text-gray-400">${a.service}</p></div>
-                    <span class="text-green-600 font-black">${a.price} ₽</span>
-                </div>
-            `).join('');
-            document.getElementById('modal-details').classList.remove('hidden');
-        }
-
         function closeDetails() { document.getElementById('modal-details').classList.add('hidden'); }
-        function openClientModal() { document.getElementById('form-client').reset(); openModal('modal-client'); }
         function fastAddAppt(ds) { document.getElementById('appt-date').value = ds; document.getElementById('appt-edit-actions').classList.add('hidden'); openModal('modal-appt'); }
         async function handleStatus(act) { if(confirm('Удалить?')) { await sendData(act, {id: currentEditId}); closeModal('modal-appt'); } }
-        function findFreeSlots() { tg.showAlert("Сегодня свободны: 12:00, 15:00, 18:00"); }
+        function switchTab(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.replace('nav-active', 'text-gray-300'));
+            document.querySelector(`[data-target="${id}"]`).classList.replace('text-gray-300', 'nav-active');
+            tg.HapticFeedback.impactOccurred('light');
+        }
+        function findFreeSlots() { tg.showAlert("Окна: 12:00, 15:00, 18:00"); }
     </script>
 </body>
 </html>
