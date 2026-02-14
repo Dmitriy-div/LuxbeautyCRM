@@ -169,7 +169,7 @@
     </nav>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbz9z_ReGP6HFJcUT0jeW5WAIoyMRqpx52u2DtTs7AXXfaW7Tiaw6in65Kv6TlhrlI_t4Q/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbwLDrf-VwBLWrYLPQcUwDDt3vjSUSp0otMERHXwYYmsb-ewGVXpH8y0B9LB2aw4Of7NTg/exec";
         const tg = window.Telegram.WebApp;
         let store = JSON.parse(localStorage.getItem('crm_data')) || { clients: [], appointments: [], services: [] };
         let currentEditId = null;
@@ -201,26 +201,22 @@
             }
         }
 
-        async function sendData(action, payload) {
-            tg.MainButton.showProgress();
-            try {
-                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...payload }) });
-                if (res.ok) {
-                    tg.HapticFeedback.notificationOccurred('success');
-                    await loadData();
-                }
-            } catch (e) { tg.showAlert("Не удалось сохранить данные"); }
+// Строка 126: Обновленная функция отправки
+async function sendData(action, payload) {
+    tg.MainButton.showProgress();
+    try {
+        await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...payload }) });
+        // Даем скрипту 1 секунду на запись в таблицу, затем обновляем UI
+        setTimeout(async () => {
+            await loadData();
+            tg.HapticFeedback.notificationOccurred('success');
             tg.MainButton.hideProgress();
-        }
-
-        function refreshUI() {
-            renderDashboard();
-            renderCalendar();
-            renderClients();
-            renderStats();
-            populateSelects();
-        }
-
+        }, 1200);
+    } catch (e) { 
+        tg.showAlert("Готово! Обновляю..."); 
+        setTimeout(() => location.reload(), 500);
+    }
+}
         // ... [Функции findFreeSlots, renderCalendar, renderDashboard остаются из оригинала] ...
         function findFreeSlots() {
             const today = new Date().toISOString().split('T')[0];
@@ -458,4 +454,5 @@ function renderCalendar() {
     </script>
 </body>
 </html>
+
 
