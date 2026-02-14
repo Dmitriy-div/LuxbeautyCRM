@@ -14,15 +14,23 @@
         .page { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Статусы */
-        .card-completed { opacity: 0.7; filter: grayscale(0.4); border-left: 5px solid #10B981 !important; }
-        .card-cancelled { opacity: 0.5; text-decoration: line-through; border-left: 5px solid #EF4444 !important; }
+        .card-completed { border-left: 5px solid #10B981 !important; opacity: 0.8; }
+        .card-cancelled { border-left: 5px solid #EF4444 !important; opacity: 0.5; filter: grayscale(1); }
         .status-waiting { border-left: 5px solid #F59E0B; }
         .status-confirmed { border-left: 5px solid #7C3AED; }
 
-        /* FAB - Круглая кнопка */
-        .fab { position: fixed; bottom: 100px; right: 20px; width: 68px; height: 68px; background: #7C3AED; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 10px 25px rgba(124, 58, 237, 0.4); z-index: 50; transition: transform 0.2s; }
+        /* Большая круглая кнопка + */
+        .fab { 
+            position: fixed; bottom: 100px; right: 20px; 
+            width: 70px; height: 70px; 
+            background: #7C3AED; color: white; 
+            border-radius: 50%; display: flex; 
+            align-items: center; justify-content: center; 
+            font-size: 30px; box-shadow: 0 10px 25px rgba(124, 58, 237, 0.4); 
+            z-index: 50; transition: transform 0.2s; 
+        }
         .fab:active { transform: scale(0.9); }
+        .filter-btn.active { background: #7C3AED; color: white; border-color: #7C3AED; }
     </style>
 </head>
 <body class="pb-32">
@@ -36,24 +44,15 @@
     </div>
 
     <div id="page-home" class="page p-5">
-        <h1 class="text-2xl font-black mb-6 uppercase tracking-tighter">Обзор</h1>
-        
-        <div class="bg-gradient-to-br from-gray-900 to-purple-900 rounded-[2.5rem] p-7 text-white shadow-xl mb-8">
-            <p class="text-purple-200 text-[10px] font-bold uppercase tracking-widest mb-1">Прибыль за сегодня</p>
+        <h1 class="text-2xl font-black mb-6 uppercase tracking-tighter">Сегодня</h1>
+        <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[2.5rem] p-7 text-white shadow-xl mb-8">
+            <p class="text-purple-100 text-[10px] font-bold uppercase tracking-widest mb-1">Прибыль сегодня</p>
             <h2 id="today-profit" class="text-4xl font-black mb-4">0 ₽</h2>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-white/10 p-3 rounded-2xl">
-                    <p class="text-[9px] text-purple-200 uppercase font-bold">Выручка</p>
-                    <p id="today-rev" class="font-bold text-sm">0 ₽</p>
-                </div>
-                <div class="bg-white/10 p-3 rounded-2xl">
-                    <p class="text-[9px] text-purple-200 uppercase font-bold">Расходники</p>
-                    <p id="today-cost" class="font-bold text-sm">0 ₽</p>
-                </div>
+            <div class="flex justify-between border-t border-white/20 pt-4">
+                <div><p class="text-[9px] text-purple-200 uppercase font-bold">Выручка</p><p id="today-rev" class="font-bold">0 ₽</p></div>
+                <div class="text-right"><p class="text-[9px] text-purple-200 uppercase font-bold">Расход</p><p id="today-cost" class="font-bold">0 ₽</p></div>
             </div>
         </div>
-
-        <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">🗓️ План на сегодня</h3>
         <div id="home-upcoming" class="space-y-4"></div>
     </div>
 
@@ -63,38 +62,44 @@
     </div>
 
     <div id="page-clients" class="page p-5 hidden">
-        <h1 class="text-2xl font-black mb-6">База клиентов</h1>
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-black">База</h1>
+            <button onclick="toggleSleeping()" id="btn-sleeping" class="text-[10px] font-bold uppercase border-2 border-gray-200 px-4 py-2 rounded-full text-gray-400">Спящие</button>
+        </div>
         <div class="relative mb-6">
             <i class="fas fa-search absolute left-4 top-4 text-gray-300"></i>
-            <input type="text" id="client-search" oninput="renderClients()" placeholder="Поиск по имени или телефону..." class="w-full bg-white p-4 pl-12 rounded-2xl shadow-sm outline-none border-none">
+            <input type="text" id="client-search" oninput="renderClients()" placeholder="Имя или телефон..." class="w-full bg-white p-4 pl-12 rounded-2xl shadow-sm outline-none">
         </div>
         <div id="clients-list" class="space-y-3"></div>
     </div>
 
     <div id="page-stats" class="page p-5 hidden">
-        <h1 class="text-2xl font-black mb-6 text-gray-900">Отчеты</h1>
-        <div class="space-y-4">
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm flex justify-between items-center border border-gray-50">
-                <div>
-                    <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Общий доход</p>
-                    <h3 id="stat-total-rev" class="text-2xl font-black text-purple-600">0 ₽</h3>
-                </div>
-                <div class="text-right">
-                    <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Маржа</p>
-                    <h3 id="stat-total-margin" class="text-xl font-black text-green-500">0%</h3>
-                </div>
+        <h1 class="text-2xl font-black mb-6">Отчеты</h1>
+        <div class="flex gap-2 mb-6 overflow-x-auto pb-2 no-scrollbar">
+            <button onclick="setStatPeriod('day')" class="filter-btn active px-6 py-2 rounded-xl border-2 border-gray-100 font-bold text-[10px] uppercase">День</button>
+            <button onclick="setStatPeriod('week')" class="filter-btn px-6 py-2 rounded-xl border-2 border-gray-100 font-bold text-[10px] uppercase">Неделя</button>
+            <button onclick="setStatPeriod('month')" class="filter-btn px-6 py-2 rounded-xl border-2 border-gray-100 font-bold text-[10px] uppercase">Месяц</button>
+            <button onclick="setStatPeriod('all')" class="filter-btn px-6 py-2 rounded-xl border-2 border-gray-100 font-bold text-[10px] uppercase">Все время</button>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-white p-5 rounded-3xl shadow-sm text-center">
+                <p class="text-gray-400 text-[9px] font-bold uppercase mb-1">Прибыль</p>
+                <p id="stat-profit" class="text-lg font-black text-purple-600">0 ₽</p>
             </div>
-
-            <div class="bg-white p-7 rounded-[2.5rem] shadow-sm">
-                <h4 class="font-black text-xs text-gray-400 uppercase tracking-widest mb-4">Популярные услуги</h4>
-                <div id="stat-popular" class="space-y-4"></div>
+            <div class="bg-white p-5 rounded-3xl shadow-sm text-center">
+                <p class="text-gray-400 text-[9px] font-bold uppercase mb-1">Средний чек</p>
+                <p id="stat-avg" class="text-lg font-black text-indigo-600">0 ₽</p>
             </div>
+        </div>
+        <div class="bg-white p-6 rounded-[2.5rem] shadow-sm">
+            <h4 class="font-black text-[10px] text-gray-400 uppercase mb-4 tracking-widest">Топ услуг</h4>
+            <div id="stat-services" class="space-y-3"></div>
         </div>
     </div>
 
     <div id="modal-details" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-md" onclick="closeDetails()"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[3rem] p-8 max-h-[85vh] overflow-y-auto">
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[3rem] p-8 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start mb-6">
                 <div>
                     <h2 id="det-name" class="text-2xl font-black text-gray-900"></h2>
@@ -102,39 +107,35 @@
                 </div>
                 <div id="det-avatar" class="w-14 h-14 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-xl font-black"></div>
             </div>
-
-            <div class="grid grid-cols-2 gap-3 mb-8">
+            <div class="grid grid-cols-2 gap-3 mb-6">
                 <button id="det-call" class="bg-gray-900 text-white p-4 rounded-2xl font-bold flex items-center justify-center gap-2"><i class="fas fa-phone-alt"></i> Позвонить</button>
-                <button id="det-copy-all" class="bg-purple-600 text-white p-4 rounded-2xl font-bold flex items-center justify-center gap-2"><i class="fas fa-copy"></i> Скопировать</button>
+                <button id="det-copy-reactivate" class="bg-purple-600 text-white p-4 rounded-2xl font-bold flex items-center justify-center gap-2 text-xs"><i class="fas fa-copy"></i> Напомнить</button>
             </div>
-
-            <div class="bg-gray-50 p-6 rounded-[2rem] flex justify-around mb-8 border border-gray-100">
-                <div class="text-center"><p class="text-[9px] font-bold text-gray-400 uppercase">Визитов</p><p id="det-count" class="text-xl font-black">0</p></div>
-                <div class="text-center"><p class="text-[9px] font-bold text-gray-400 uppercase">LTV (Всего)</p><p id="det-total" class="text-xl font-black text-purple-600">0 ₽</p></div>
+            <div class="bg-amber-50 p-5 rounded-2xl mb-6 border border-amber-100">
+                <p class="text-[9px] font-black text-amber-600 uppercase mb-2">Формулы / Заметки</p>
+                <p id="det-notes" class="text-sm text-amber-900 font-medium italic"></p>
             </div>
-
-            <h4 class="font-black text-[10px] text-gray-400 uppercase ml-2 mb-4 tracking-widest">История процедур</h4>
-            <div id="det-history" class="space-y-3 pb-8"></div>
+            <div id="det-history" class="space-y-3 pb-10"></div>
         </div>
     </div>
 
     <div id="modal-appt" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeModal('modal-appt')"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7 max-h-[92vh] overflow-y-auto shadow-2xl">
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-7 max-h-[92vh] overflow-y-auto">
             <div id="appt-reminders" class="mb-6 hidden">
-                <button onclick="copyReminderText()" class="w-full bg-purple-600 text-white py-5 rounded-3xl font-bold text-xs uppercase flex items-center justify-center gap-3 shadow-lg shadow-purple-200">
-                    <i class="fas fa-copy text-lg"></i> Скопировать текст уведомления
+                <button onclick="copyReminderText()" class="w-full bg-purple-600 text-white py-5 rounded-3xl font-bold text-xs uppercase flex items-center justify-center gap-3 shadow-lg">
+                    <i class="fas fa-copy text-lg"></i> Скопировать уведомление
                 </button>
             </div>
             <form id="form-appt" class="space-y-4">
-                <select id="appt-status" class="w-full bg-gray-100 p-4 rounded-2xl font-bold text-sm outline-none border-none">
+                <select id="appt-status" class="w-full bg-gray-100 p-4 rounded-2xl font-bold text-sm outline-none">
                     <option value="waiting">⏳ Ожидает</option>
                     <option value="confirmed">✅ Подтверждена</option>
                     <option value="completed">🎉 Выполнена</option>
                     <option value="cancelled">❌ Отменена</option>
                 </select>
-                <select id="appt-client" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold text-sm outline-none"></select>
-                <select id="appt-service" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold text-sm outline-none"></select>
+                <select id="appt-client" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold text-sm"></select>
+                <select id="appt-service" required class="w-full bg-gray-50 p-4 rounded-2xl font-bold text-sm"></select>
                 <div class="flex gap-3">
                     <input type="number" id="appt-price" placeholder="Цена ₽" required class="w-1/2 bg-gray-50 p-4 rounded-2xl font-bold">
                     <input type="number" id="appt-costs" placeholder="Расход ₽" value="0" class="w-1/2 bg-gray-50 p-4 rounded-2xl font-bold text-red-500">
@@ -144,7 +145,7 @@
                     <input type="time" id="appt-time" required class="w-1/2 bg-gray-50 p-4 rounded-2xl font-bold">
                 </div>
                 <div id="appt-edit-actions" class="hidden text-center pt-2">
-                    <button type="button" onclick="handleStatus('deleteAppointment')" class="text-red-500 font-bold text-[10px] uppercase tracking-widest opacity-50">Удалить запись</button>
+                    <button type="button" onclick="handleStatus('deleteAppointment')" class="text-red-500 font-bold text-[10px] uppercase tracking-widest">Удалить запись</button>
                 </div>
                 <div class="h-10"></div>
             </form>
@@ -153,24 +154,26 @@
 
     <nav class="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-xl border-t border-gray-100 flex justify-around py-4 pb-10 z-40">
         <button onclick="switchTab('page-home')" class="nav-btn nav-active flex flex-col items-center gap-1 w-1/4" data-target="page-home">
-            <i class="fas fa-home text-xl"></i><span class="text-[9px] font-bold uppercase">Обзор</span>
+            <i class="fas fa-calendar-day text-xl"></i><span class="text-[9px] font-bold uppercase">Сегодня</span>
         </button>
         <button onclick="switchTab('page-calendar')" class="nav-btn text-gray-300 flex flex-col items-center gap-1 w-1/4" data-target="page-calendar">
-            <i class="fas fa-calendar-alt text-xl"></i><span class="text-[9px] font-bold uppercase">График</span>
+            <i class="fas fa-clock text-xl"></i><span class="text-[9px] font-bold uppercase">График</span>
         </button>
         <button onclick="switchTab('page-clients')" class="nav-btn text-gray-300 flex flex-col items-center gap-1 w-1/4" data-target="page-clients">
-            <i class="fas fa-users text-xl"></i><span class="text-[9px] font-bold uppercase">База</span>
+            <i class="fas fa-address-book text-xl"></i><span class="text-[9px] font-bold uppercase">База</span>
         </button>
         <button onclick="switchTab('page-stats')" class="nav-btn text-gray-300 flex flex-col items-center gap-1 w-1/4" data-target="page-stats">
-            <i class="fas fa-chart-line text-xl"></i><span class="text-[9px] font-bold uppercase">Отчеты</span>
+            <i class="fas fa-chart-bar text-xl"></i><span class="text-[9px] font-bold uppercase">Отчеты</span>
         </button>
     </nav>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbzgOsrc9T9TH3zSEmESCMoD07KTIwuK4yEx0BvhyKzHY-3jHDQ5CuNmOegGbk_Z9LLcGA/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxbBGUXpSVqDHOjVd4vJFKUkDtEGlwKCwe6olFMQadwKrKL-o3xEpigoB3egaqVQucdYQ/exec";
         const tg = window.Telegram.WebApp;
         let store = { clients: [], appointments: [], services: [] };
         let currentEditId = null;
+        let statPeriod = 'day';
+        let showOnlySleeping = false;
 
         document.addEventListener('DOMContentLoaded', () => { tg.expand(); loadData(); });
 
@@ -191,17 +194,9 @@
             populateSelects();
         }
 
-        function getStatusClass(s) {
-            if (s === 'completed') return 'card-completed';
-            if (s === 'cancelled') return 'card-cancelled';
-            if (s === 'waiting') return 'status-waiting';
-            return 'status-confirmed';
-        }
-
         function renderDashboard() {
             const today = new Date().toISOString().split('T')[0];
             const appts = store.appointments.filter(a => a.date === today);
-            
             const confirmed = appts.filter(a => a.status !== 'cancelled');
             const rev = confirmed.reduce((s,a) => s + Number(a.price), 0);
             const cost = confirmed.reduce((s,a) => s + Number(a.costs || 0), 0);
@@ -211,57 +206,47 @@
             document.getElementById('today-cost').innerText = cost.toLocaleString() + ' ₽';
 
             document.getElementById('home-upcoming').innerHTML = appts.sort((a,b) => a.time.localeCompare(b.time)).map(a => `
-                <div onclick="openEditAppt('${a.id}')" class="bg-white p-5 rounded-3xl shadow-sm flex justify-between items-center border border-gray-50 ${getStatusClass(a.status)}">
+                <div onclick="openEditAppt('${a.id}')" class="bg-white p-5 rounded-3xl shadow-sm flex justify-between items-center ${getStatusClass(a.status)}">
                     <div class="flex items-center gap-4">
                         <span class="text-sm font-black text-purple-600">${a.time}</span>
-                        <div>
-                            <p class="font-bold text-sm">${a.client_name}</p>
-                            <p class="text-[9px] text-gray-400 font-bold uppercase">${a.service}</p>
-                        </div>
+                        <div><p class="font-bold text-sm">${a.client_name}</p><p class="text-[9px] text-gray-400 font-bold uppercase">${a.service}</p></div>
                     </div>
                     <p class="font-black text-sm text-gray-900">${a.price} ₽</p>
                 </div>
-            `).join('') || '<p class="text-center text-gray-300 text-xs py-10 font-bold uppercase tracking-widest">Планов нет</p>';
+            `).join('') || '<p class="text-center text-gray-300 text-[10px] font-bold py-10 uppercase">Записей на сегодня нет</p>';
         }
 
-        function renderCalendar() {
-            const cont = document.getElementById('vertical-timeline');
-            cont.innerHTML = '';
-            const today = new Date();
-            for (let i = 0; i < 14; i++) {
-                const d = new Date(); d.setDate(today.getDate() + i);
-                const ds = d.toISOString().split('T')[0];
-                const dayAppts = store.appointments.filter(a => a.date === ds).sort((a,b) => a.time.localeCompare(b.time));
-                
-                cont.innerHTML += `
-                    <div>
-                        <div class="flex justify-between items-center mb-4 px-2">
-                            <span class="font-black text-gray-400 text-[10px] uppercase tracking-widest">${d.toLocaleDateString('ru',{weekday:'short', day:'numeric', month:'short'})}</span>
-                            <button onclick="fastAddAppt('${ds}')" class="text-purple-600 text-[10px] font-black uppercase tracking-widest">+ Запись</button>
-                        </div>
-                        <div class="space-y-3">
-                            ${dayAppts.map(a => `
-                                <div onclick="openEditAppt('${a.id}')" class="bg-white p-4 rounded-3xl shadow-sm flex justify-between items-center border border-gray-50 ${getStatusClass(a.status)}">
-                                    <div class="flex items-center gap-3">
-                                        <span class="text-xs font-black text-purple-500">${a.time}</span>
-                                        <div><p class="font-bold text-sm text-gray-800">${a.client_name}</p><p class="text-[8px] text-gray-400 font-black uppercase">${a.service}</p></div>
-                                    </div>
-                                    <p class="font-black text-sm">${a.price} ₽</p>
-                                </div>
-                            `).join('') || '<div class="p-8 border-2 border-dashed border-gray-100 rounded-[2.5rem] text-center text-[10px] text-gray-300 font-bold uppercase tracking-widest">Выходной</div>'}
-                        </div>
-                    </div>`;
-            }
+        function toggleSleeping() {
+            showOnlySleeping = !showOnlySleeping;
+            const btn = document.getElementById('btn-sleeping');
+            btn.classList.toggle('active');
+            btn.style.borderColor = showOnlySleeping ? '#7C3AED' : '#E5E7EB';
+            btn.style.color = showOnlySleeping ? '#7C3AED' : '#9CA3AF';
+            renderClients();
         }
 
         function renderClients() {
             const term = document.getElementById('client-search').value.toLowerCase();
             const cont = document.getElementById('clients-list');
-            cont.innerHTML = store.clients.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term)).map(c => `
+            const now = new Date();
+            let filtered = store.clients.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term));
+            
+            if (showOnlySleeping) {
+                filtered = filtered.filter(c => {
+                    if (!c.last_visit) return true;
+                    const diff = (now - new Date(c.last_visit)) / (1000 * 60 * 60 * 24);
+                    return diff > 45;
+                });
+            }
+
+            cont.innerHTML = filtered.map(c => `
                 <div onclick="showDetails('${c.id}')" class="bg-white p-4 rounded-[1.8rem] shadow-sm flex items-center justify-between border border-gray-50 active:scale-[0.98] transition-transform">
                     <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center font-black text-lg">${c.name[0]}</div>
-                        <div><p class="font-black text-sm">${c.name}</p><p class="text-[10px] text-gray-400 font-bold">${c.phone}</p></div>
+                        <div class="w-12 h-12 ${showOnlySleeping ? 'bg-red-50 text-red-400' : 'bg-indigo-50 text-indigo-500'} rounded-2xl flex items-center justify-center font-black text-lg">${c.name[0]}</div>
+                        <div>
+                            <p class="font-black text-sm">${c.name}</p>
+                            <p class="text-[10px] text-gray-400 font-bold">${c.last_visit ? 'Визит: ' + c.last_visit : 'Новый клиент'}</p>
+                        </div>
                     </div>
                     <i class="fas fa-chevron-right text-gray-200 text-xs"></i>
                 </div>
@@ -271,62 +256,96 @@
         function showDetails(id) {
             const c = store.clients.find(i => i.id == id);
             const history = store.appointments.filter(a => a.client_id == id).sort((a,b) => b.date.localeCompare(a.date));
-            
             document.getElementById('det-name').innerText = c.name;
             document.getElementById('det-phone').innerText = c.phone;
             document.getElementById('det-avatar').innerText = c.name[0];
-            document.getElementById('det-count').innerText = history.filter(a => a.status === 'completed').length;
-            document.getElementById('det-total').innerText = history.filter(a => a.status === 'completed').reduce((s,a) => s + Number(a.price), 0).toLocaleString() + ' ₽';
-            
+            document.getElementById('det-notes').innerText = c.notes || "Заметок нет";
             document.getElementById('det-call').onclick = () => window.location.href = `tel:${c.phone}`;
-            document.getElementById('det-copy-all').onclick = () => {
-                navigator.clipboard.writeText(`Клиент: ${c.name}\nТелефон: ${c.phone}\nLTV: ${document.getElementById('det-total').innerText}`);
+            document.getElementById('det-copy-reactivate').onclick = () => {
+                const text = `Привет, ${c.name}! Это твой мастер. Хотела напомнить, что мы давно не виделись. Выбрать тебе время на процедуру?`;
+                navigator.clipboard.writeText(text);
                 tg.HapticFeedback.notificationOccurred('success');
+                tg.showAlert('Текст скопирован!');
             };
-
             document.getElementById('det-history').innerHTML = history.map(a => `
                 <div class="bg-white p-4 rounded-2xl border border-gray-50 flex justify-between items-center shadow-sm">
-                    <div>
-                        <p class="text-[9px] font-bold text-gray-300 uppercase">${a.date}</p>
-                        <p class="text-xs font-bold text-gray-800">${a.service}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="font-black text-xs">${a.price} ₽</p>
-                        <p class="text-[8px] font-bold uppercase ${a.status === 'completed' ? 'text-green-500' : 'text-amber-500'}">${a.status}</p>
-                    </div>
+                    <div><p class="text-[9px] font-bold text-gray-300 uppercase">${a.date}</p><p class="text-xs font-bold">${a.service}</p></div>
+                    <p class="font-black text-xs">${a.price} ₽</p>
                 </div>
-            `).join('') || '<p class="text-center text-gray-300 text-[10px] font-bold py-10 uppercase">История пуста</p>';
-
+            `).join('');
             document.getElementById('modal-details').classList.remove('hidden');
         }
 
-        function renderStats() {
-            const compl = store.appointments.filter(a => a.status === 'completed');
-            const totalRev = compl.reduce((s,a) => s + Number(a.price), 0);
-            const totalCost = compl.reduce((s,a) => s + Number(a.costs || 0), 0);
-            
-            document.getElementById('stat-total-rev').innerText = totalRev.toLocaleString() + ' ₽';
-            document.getElementById('stat-total-margin').innerText = totalRev ? Math.round(((totalRev-totalCost)/totalRev)*100) + '%' : '0%';
-            
-            const services = {};
-            compl.forEach(a => services[a.service] = (services[a.service] || 0) + 1);
-            
-            document.getElementById('stat-popular').innerHTML = Object.entries(services).sort((a,b) => b[1]-a[1]).map(([name, count]) => `
-                <div class="flex justify-between items-center bg-gray-50 p-4 rounded-2xl">
-                    <span class="font-bold text-sm text-gray-700">${name}</span>
-                    <span class="bg-white px-3 py-1 rounded-xl text-purple-600 font-black text-xs">${count}</span>
-                </div>
-            `).join('');
+        function setStatPeriod(p) {
+            statPeriod = p;
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('active');
+                if(b.onclick.toString().includes(p)) b.classList.add('active');
+            });
+            renderStats();
         }
 
-        async function copyReminderText() {
-            const a = store.appointments.find(i => i.id == currentEditId);
-            const c = store.clients.find(i => i.id == a.client_id);
-            const text = `Привет, ${c.name}! Напоминаю о записи: ${a.date} в ${a.time} (${a.service}). Жду тебя!`;
-            
-            await navigator.clipboard.writeText(text);
-            tg.HapticFeedback.notificationOccurred('success');
-            tg.showAlert('Текст скопирован! Теперь вставь его в чат с клиентом.');
+        function renderStats() {
+            const now = new Date();
+            const compl = store.appointments.filter(a => {
+                if (a.status !== 'completed') return false;
+                if (statPeriod === 'all') return true;
+                const d = new Date(a.date);
+                if (statPeriod === 'day') return d.toDateString() === now.toDateString();
+                if (statPeriod === 'week') return (now - d) / (1000 * 60 * 60 * 24) <= 7;
+                if (statPeriod === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            });
+            const rev = compl.reduce((s,a) => s + Number(a.price), 0);
+            const cost = compl.reduce((s,a) => s + Number(a.costs || 0), 0);
+            const profit = rev - cost;
+            const avg = compl.length ? Math.round(rev / compl.length) : 0;
+            document.getElementById('stat-profit').innerText = profit.toLocaleString() + ' ₽';
+            document.getElementById('stat-avg').innerText = avg.toLocaleString() + ' ₽';
+            const svcs = {};
+            compl.forEach(a => svcs[a.service] = (svcs[a.service] || 0) + 1);
+            document.getElementById('stat-services').innerHTML = Object.entries(svcs).sort((a,b)=>b[1]-a[1]).map(([name, count]) => `
+                <div class="flex justify-between items-center text-sm font-bold bg-gray-50 p-3 rounded-xl">
+                    <span class="text-gray-600">${name}</span><span class="text-purple-600">${count}</span>
+                </div>
+            `).join('') || '<p class="text-center text-gray-300 text-[10px] py-5 font-bold">НЕТ ДАННЫХ</p>';
+        }
+
+        function getStatusClass(s) {
+            if (s === 'completed') return 'card-completed';
+            if (s === 'cancelled') return 'card-cancelled';
+            if (s === 'waiting') return 'status-waiting';
+            return 'status-confirmed';
+        }
+
+        function switchTab(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.replace('nav-active', 'text-gray-300'));
+            document.querySelector(`[data-target="${id}"]`).classList.replace('text-gray-300', 'nav-active');
+            tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function populateSelects() {
+            const cS = document.getElementById('appt-client');
+            const sS = document.getElementById('appt-service');
+            cS.innerHTML = store.clients.map(c => `<option value="${c.id}" data-name="${c.name}">${c.name}</option>`).join('');
+            sS.innerHTML = store.services.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            tg.MainButton.setText("СОХРАНИТЬ").show().onClick(() => document.getElementById('form-appt').requestSubmit());
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); tg.MainButton.hide(); }
+        function closeDetails() { document.getElementById('modal-details').classList.add('hidden'); }
+
+        function fastAddAppt(ds) {
+            currentEditId = null; document.getElementById('form-appt').reset();
+            document.getElementById('appt-date').value = ds;
+            document.getElementById('appt-edit-actions').classList.add('hidden');
+            document.getElementById('appt-reminders').classList.add('hidden');
+            openModal('modal-appt');
         }
 
         function openEditAppt(id) {
@@ -344,23 +363,6 @@
             openModal('modal-appt');
         }
 
-        function fastAddAppt(ds) {
-            currentEditId = null;
-            document.getElementById('form-appt').reset();
-            document.getElementById('appt-date').value = ds;
-            document.getElementById('appt-edit-actions').classList.add('hidden');
-            document.getElementById('appt-reminders').classList.add('hidden');
-            openModal('modal-appt');
-        }
-
-        function openModal(id) {
-            document.getElementById(id).classList.remove('hidden');
-            tg.MainButton.setText("СОХРАНИТЬ").show().onClick(() => document.getElementById('form-appt').requestSubmit());
-        }
-
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); tg.MainButton.hide(); }
-        function closeDetails() { document.getElementById('modal-details').classList.add('hidden'); }
-
         document.getElementById('form-appt').onsubmit = async (e) => {
             e.preventDefault();
             const cSel = document.getElementById('appt-client');
@@ -377,26 +379,43 @@
             };
             tg.MainButton.showProgress();
             await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: currentEditId ? 'updateAppointment' : 'addAppointment', ...data }) });
-            await loadData();
-            closeModal('modal-appt');
+            await loadData(); closeModal('modal-appt');
         };
 
-        function populateSelects() {
-            const cS = document.getElementById('appt-client');
-            const sS = document.getElementById('appt-service');
-            cS.innerHTML = store.clients.map(c => `<option value="${c.id}" data-name="${c.name}">${c.name}</option>`).join('');
-            sS.innerHTML = store.services.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+        function renderCalendar() {
+            const cont = document.getElementById('vertical-timeline');
+            cont.innerHTML = ''; const today = new Date();
+            for (let i = 0; i < 14; i++) {
+                const d = new Date(); d.setDate(today.getDate() + i);
+                const ds = d.toISOString().split('T')[0];
+                const dayAppts = store.appointments.filter(a => a.date === ds).sort((a,b) => a.time.localeCompare(b.time));
+                cont.innerHTML += `
+                    <div>
+                        <p class="font-black text-gray-400 text-[10px] uppercase tracking-widest mb-4 px-2">${d.toLocaleDateString('ru',{weekday:'short', day:'numeric', month:'short'})}</p>
+                        <div class="space-y-3">
+                            ${dayAppts.map(a => `
+                                <div onclick="openEditAppt('${a.id}')" class="bg-white p-4 rounded-3xl shadow-sm flex justify-between items-center border border-gray-50 ${getStatusClass(a.status)}">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-xs font-black text-purple-500">${a.time}</span>
+                                        <div><p class="font-bold text-sm text-gray-800">${a.client_name}</p><p class="text-[8px] text-gray-400 font-black uppercase">${a.service}</p></div>
+                                    </div><p class="font-black text-sm">${a.price} ₽</p>
+                                </div>
+                            `).join('') || '<p class="text-center text-gray-300 text-[10px] py-5 font-bold">ВЫХОДНОЙ</p>'}
+                        </div>
+                    </div>`;
+            }
         }
 
-        function switchTab(id) {
-            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.replace('nav-active', 'text-gray-300'));
-            document.querySelector(`[data-target="${id}"]`).classList.replace('text-gray-300', 'nav-active');
-            tg.HapticFeedback.impactOccurred('light');
+        async function copyReminderText() {
+            const a = store.appointments.find(i => i.id == currentEditId);
+            const c = store.clients.find(i => i.id == a.client_id);
+            const text = `Привет, ${c.name}! Напоминаю о записи: ${a.date} в ${a.time} (${a.service}). Жду тебя!`;
+            await navigator.clipboard.writeText(text);
+            tg.HapticFeedback.notificationOccurred('success');
+            tg.showAlert('Уведомление скопировано!');
         }
 
-        async function handleStatus(act) { if(confirm('Удалить запись?')) { tg.MainButton.showProgress(); await fetch(API_URL, {method:'POST', body: JSON.stringify({action: act, id: currentEditId})}); await loadData(); closeModal('modal-appt'); } }
+        async function handleStatus(act) { if(confirm('Удалить?')) { tg.MainButton.showProgress(); await fetch(API_URL, {method:'POST', body: JSON.stringify({action: act, id: currentEditId})}); await loadData(); closeModal('modal-appt'); } }
     </script>
 </body>
 </html>
