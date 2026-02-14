@@ -230,38 +230,46 @@
             tg.showPopup({ title: 'Свободно', message: free.length ? free.join(' | ') : 'Окон нет', buttons: [{type: 'close'}] });
         }
 
-        function renderCalendar() {
-            const cont = document.getElementById('vertical-timeline');
-            cont.innerHTML = '';
-            const today = new Date();
-            for (let i = 0; i < 14; i++) {
-                const d = new Date(); d.setDate(today.getDate() + i);
-                const ds = d.toISOString().split('T')[0];
-                const dayAppts = store.appointments.filter(a => a.date.includes(ds)).sort((a,b) => a.time.localeCompare(b.time));
-                cont.innerHTML += `
-                    <div>
-                        <div class="flex justify-between items-center mb-4 px-1">
-                            <span class="font-bold text-gray-400 text-[10px] uppercase tracking-widest">${d.toLocaleDateString('ru',{weekday:'short', day:'numeric', month:'short'})}</span>
-                            <button onclick="fastAddAppt('${ds}')" class="text-purple-600 text-[10px] font-black uppercase">+ ЗАПИСЬ</button>
+// Строка 139: Замени старую функцию renderCalendar на эту:
+function renderCalendar() {
+    const cont = document.getElementById('vertical-timeline');
+    cont.innerHTML = '';
+    const today = new Date();
+    for (let i = 0; i < 14; i++) {
+        const d = new Date(); d.setDate(today.getDate() + i);
+        
+        // Форматируем дату в YYYY-MM-DD для точного сравнения
+        const ds = d.toISOString().split('T')[0];
+        
+        const dayAppts = store.appointments.filter(a => {
+            if (!a.date) return false;
+            // Обрезаем ISO строку из базы до YYYY-MM-DD
+            return a.date.split('T')[0] === ds;
+        }).sort((a,b) => a.time.localeCompare(b.time));
+
+        cont.innerHTML += `
+            <div>
+                <div class="flex justify-between items-center mb-4 px-1">
+                    <span class="font-bold text-gray-400 text-[10px] uppercase tracking-widest">${d.toLocaleDateString('ru',{weekday:'short', day:'numeric', month:'short'})}</span>
+                    <button onclick="fastAddAppt('${ds}')" class="text-purple-600 text-[10px] font-black uppercase">+ ЗАПИСЬ</button>
+                </div>
+                <div class="space-y-3">
+                    ${dayAppts.map(a => `
+                        <div onclick="openEditAppt('${a.id}')" class="bg-white p-4 rounded-3xl shadow-sm border border-gray-50 flex justify-between items-center status-${a.status}">
+                            <div>
+                                <p class="text-[10px] font-black ${a.status=='cancelled'?'text-gray-300':'text-purple-600'}">${a.time}</p>
+                                <p class="font-bold text-sm text-gray-800">${a.client_name}</p>
+                                <p class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">${a.service}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-black text-sm text-gray-900">${a.price} ₽</p>
+                            </div>
                         </div>
-                        <div class="space-y-3">
-                            ${dayAppts.map(a => `
-                                <div onclick="openEditAppt('${a.id}')" class="bg-white p-4 rounded-3xl shadow-sm border border-gray-50 flex justify-between items-center status-${a.status}">
-                                    <div>
-                                        <p class="text-[10px] font-black ${a.status=='cancelled'?'text-gray-300':'text-purple-600'}">${a.time}</p>
-                                        <p class="font-bold text-sm text-gray-800">${a.client_name}</p>
-                                        <p class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">${a.service}</p>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="font-black text-sm text-gray-900">${a.price} ₽</p>
-                                        <p class="text-[8px] text-red-400 font-bold">-${a.costs || 0} ₽</p>
-                                    </div>
-                                </div>
-                            `).join('') || '<div class="p-6 border-2 border-dashed border-gray-100 rounded-[2rem] text-center text-[10px] text-gray-300 font-bold uppercase tracking-widest">Нет записей</div>'}
-                        </div>
-                    </div>`;
-            }
-        }
+                    `).join('') || '<div class="p-6 border-2 border-dashed border-gray-100 rounded-[2rem] text-center text-[10px] text-gray-300 font-bold uppercase tracking-widest">Нет записей</div>'}
+                </div>
+            </div>`;
+    }
+}
 
         function renderDashboard() {
             const todayStr = new Date().toISOString().split('T')[0];
@@ -450,3 +458,4 @@
     </script>
 </body>
 </html>
+
